@@ -173,7 +173,7 @@ test('glossary is reachable from lessons and supports direct term links', async 
   await expect(page.locator('#view')).toBeInViewport();
   await expect(page.locator('#view')).toContainText('numbered leadership period');
   // The index and further-reading links must point to real sections and routes.
-  const brokenAnchors = await index.locator('a').evaluateAll(links => links.filter(link => !document.getElementById(link.hash.slice(1))).map(link => link.hash));
+  const brokenAnchors = await index.locator('a').evaluateAll(links => links.map(link => link.getAttribute('href')!).filter(hash => !document.getElementById(hash.slice(1))));
   expect(brokenAnchors).toEqual([]);
   await page.setViewportSize({ width: 320, height: 740 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

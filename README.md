@@ -75,3 +75,9 @@ not just in source templates.
 
 Every protocol claim should trace to a linked paper or specification. Mark historical rules, draft
 versions, simplified diagrams, and omitted production behavior explicitly.
+
+## Hosting
+
+GitHub Pages deployment is configured for `https://rootulp.github.io/consensus-field-guide/`.
+The repository must be public and Pages must use **GitHub Actions** as its publishing source.
+See [the hosting guide](docs/hosting.md) for setup, deployment, and verification.

@@ -1,4 +1,5 @@
 ---
+import { sitePath } from '../lib/urls';
 import Base from '../layouts/Base.astro';
 ---
 
@@ -27,7 +28,7 @@ import Base from '../layouts/Base.astro';
       </li>
     </ul>
 
-    <p>New to the terminology? The <a href="/glossary/">glossary</a> explains common terms with examples from the lessons.</p>
+    <p>New to the terminology? The <a href={sitePath('/glossary/')}>glossary</a> explains common terms with examples from the lessons.</p>
 
     <h2>About the animations</h2>
     <p>
@@ -41,7 +42,7 @@ import Base from '../layouts/Base.astro';
     <h2>Spotted a mistake?</h2>
     <p>Corrections are welcome. If you spot a mistake, please <a href="https://github.com/rootulp/consensus-field-guide/issues">create an issue on GitHub</a>. Include the lesson, what looks wrong, and a link to the relevant paper or specification if you have one.</p>
 
-    <p><a href="/">Back to the family tree →</a></p>
+    <p><a href={sitePath('/')}>Back to the family tree →</a></p>
   </div>
 </Base>
 

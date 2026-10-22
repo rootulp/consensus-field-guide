@@ -1,4 +1,5 @@
 ---
+import { sitePath } from '../lib/urls';
 import Base from '../layouts/Base.astro';
 import { glossary } from '../data/glossary';
 ---
@@ -28,7 +29,7 @@ import { glossary } from '../data/glossary';
           <p class="example"><strong>Example:</strong> {entry.example}</p>
           {entry.note && <p>{entry.note}</p>}
           <div class="term-links">
-            <a href={`/lessons/${entry.lesson}/`}>See it in {entry.lessonName} →</a>
+            <a href={sitePath(`/lessons/${entry.lesson}/`)}>See it in {entry.lessonName} →</a>
             <a href="#terms-top">Back to terms ↑</a>
           </div>
         </section>

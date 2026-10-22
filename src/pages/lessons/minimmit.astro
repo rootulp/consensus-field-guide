@@ -1,4 +1,5 @@
 ---
+import { sitePath } from '../../lib/urls';
 import Lesson from '../../layouts/Lesson.astro';
 import Quiz from '../../components/Quiz.astro';
 import MinimmitSim from '../../components/sims/MinimmitSim.astro';
@@ -126,7 +127,7 @@ const papers = [
   </p>
   <p>
     The draft separates a block’s guaranteed inclusion from its placement in the total order. Missing data lowers
-    the affected chain’s supported tip; a lagging slot can still delay total-order placement. The <a href="/lessons/multimmit/">Multimmit lesson</a> walks through the draft’s per-chain position rules and
+    the affected chain’s supported tip; a lagging slot can still delay total-order placement. The <a href={sitePath('/lessons/multimmit/')}>Multimmit lesson</a> walks through the draft’s per-chain position rules and
     distinguishes membership finality from placement in the total order. Its walkthrough is a teaching example,
     not an independent validation of the draft’s proofs.
   </p>

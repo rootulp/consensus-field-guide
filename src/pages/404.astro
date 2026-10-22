@@ -1,0 +1,19 @@
+---
+import { sitePath } from '../lib/urls';
+import Base from '../layouts/Base.astro';
+---
+<Base title="Page not found · The Consensus Field Guide" description="Find your way back to the consensus family tree and lessons.">
+  <div class="wrap-narrow missing">
+    <div class="eyebrow">404 · Page not found</div>
+    <h1>This path isn’t on the map.</h1>
+    <p>The page may have moved, or the address may have a typo.</p>
+    <a class="btn btn-primary" href={sitePath('/')}>Explore the family tree →</a>
+    <a class="btn btn-quiet" href={sitePath('/lessons/')}>Browse the lessons →</a>
+  </div>
+</Base>
+<style>
+  .missing { padding-top: 64px; }
+  h1 { font-size: clamp(36px, 6vw, 52px); }
+  p { color: var(--ink-2); }
+  .btn { margin: 12px 12px 0 0; }
+</style>

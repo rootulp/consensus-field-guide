@@ -1,0 +1,120 @@
+---
+interface Option {
+  text: string;
+  correct?: boolean;
+}
+
+interface Props {
+  question: string;
+  options: Option[];
+  /** Shown after a correct answer. */
+  right: string;
+  /** Shown after a wrong answer. */
+  wrong: string;
+}
+
+const { question, options, right, wrong } = Astro.props;
+---
+
+<fieldset class="quiz" data-quiz data-right={right} data-wrong={wrong}>
+  <legend>Check yourself</legend>
+  <p class="q">{question}</p>
+  <div class="opts">
+    {
+      options.map((o) => (
+        <button type="button" class="opt" data-correct={o.correct ? 'true' : 'false'} aria-pressed="false">
+          {o.text}
+        </button>
+      ))
+    }
+  </div>
+  <p class="feedback" data-feedback aria-live="polite"></p>
+</fieldset>
+
+<script>
+  for (const quiz of document.querySelectorAll<HTMLElement>('[data-quiz]')) {
+    const feedback = quiz.querySelector<HTMLElement>('[data-feedback]')!;
+    const opts = [...quiz.querySelectorAll<HTMLButtonElement>('.opt')];
+    opts.forEach((b) =>
+      b.addEventListener('click', () => {
+        const ok = b.dataset.correct === 'true';
+        opts.forEach((o) => {
+          o.setAttribute('aria-pressed', String(o === b));
+          o.dataset.result = o === b ? (ok ? 'right' : 'wrong') : '';
+        });
+        feedback.textContent = ok ? quiz.dataset.right! : quiz.dataset.wrong!;
+        feedback.dataset.result = ok ? 'right' : 'wrong';
+      }),
+    );
+  }
+</script>
+
+<style>
+  .quiz {
+    border: 1px solid var(--rule);
+    padding: 22px;
+    margin: 0;
+  }
+
+  legend {
+    font-weight: 600;
+    font-size: 15px;
+    padding: 0 6px;
+  }
+
+  .q {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .opts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .opt {
+    min-height: 44px;
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 15px;
+    cursor: pointer;
+    background: var(--paper);
+    border: 1px solid var(--rule-2);
+    color: var(--ink);
+  }
+
+  .opt:hover {
+    border-color: var(--ink);
+  }
+
+  .opt[data-result='right'] {
+    background: var(--good-wash);
+    border-color: var(--good);
+  }
+
+  .opt[data-result='wrong'] {
+    background: var(--bad-wash);
+    border-color: var(--bad);
+  }
+
+  .feedback {
+    margin: 12px 0 0;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .feedback:empty {
+    display: none;
+  }
+
+  .feedback[data-result='right'] {
+    color: var(--good-ink);
+  }
+
+  .feedback[data-result='wrong'] {
+    color: var(--bad-ink);
+  }
+</style>

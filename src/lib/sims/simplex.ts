@@ -31,7 +31,7 @@ export const isDone = (s: SimplexState): boolean =>
 
 export function step(s: SimplexState): SimplexState {
   if (isDone(s)) return initialState(s.leaderOffline);
-  const st = s.st.map((x) => (x === 'notarized' ? 'finalized' : x));
+  const st: SimplexStatus[] = s.st.map((x) => (x === 'notarized' ? 'finalized' : x));
   const finalizedNow = s.st.findIndex((x) => x === 'notarized');
   let { cur, stage } = s;
   let last = '';

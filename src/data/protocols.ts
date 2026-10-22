@@ -16,7 +16,7 @@ export const families: Record<FamilyId, Family> = {
   classic: { id: 'classic', label: 'Classical BFT', color: '#6D28D9', column: 300 },
   chain: { id: 'chain', label: 'Blockchain BFT', color: '#2747D6', column: 540 },
   nak: { id: 'nak', label: 'Nakamoto & PoS', color: '#B4530A', column: 760 },
-  sample: { id: 'sample', label: 'Sampling', color: '#BE185D', column: 920 },
+  sample: { id: 'sample', label: 'Sampling', color: '#BE185D', column: 905 },
 };
 
 export type Tag = 'crash' | 'final' | 'prob';
@@ -93,7 +93,7 @@ export const protocols: Protocol[] = [
   {
     id: 'ava', name: 'Avalanche', year: 2018, family: 'sample', who: 'Team Rocket',
     gift: 'Validators repeatedly poll small random samples of peers until the whole network tips toward one answer.',
-    tags: ['prob'], x: 920, y: 600,
+    tags: ['prob'], x: 905, y: 600,
   },
   {
     id: 'nb', name: 'Narwhal & Bullshark', year: 2021, family: 'classic', who: 'Danezis, Kokoris-Kogias, Sonnino, Spiegelman et al.',

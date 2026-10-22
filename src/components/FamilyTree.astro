@@ -1,9 +1,12 @@
 ---
 import { displayYear, edges, families, lessonHref, protocols, byId } from '../data/protocols';
 
-const W = 164;
+// Node x positions in the data are authored for a 1000px-wide canvas; scale them to fit beside the panel.
+const SCALE = 0.9;
+const sx = (x: number) => Math.round(x * SCALE);
+const W = 156;
 const H = 56;
-const WIDTH = 1000;
+const WIDTH = 900;
 const HEIGHT = 980;
 
 const decades = [
@@ -18,7 +21,9 @@ const paths = edges.map(([from, to]) => {
   const a = byId[from];
   const b = byId[to];
   const midY = (a.y + b.y) / 2;
-  return { from, to, d: `M ${a.x} ${a.y + H / 2} C ${a.x} ${midY}, ${b.x} ${midY}, ${b.x} ${b.y - H / 2}` };
+  const ax = sx(a.x);
+  const bx = sx(b.x);
+  return { from, to, d: `M ${ax} ${a.y + H / 2} C ${ax} ${midY}, ${bx} ${midY}, ${bx} ${b.y - H / 2}` };
 });
 
 const filters = [
@@ -70,7 +75,7 @@ const clientData = {
         }
         {
           Object.values(families).map((f) => (
-            <div class="column" style={`left:${f.column - W / 2}px;width:${W}px;color:${f.color}`}>
+            <div class="column" style={`left:${sx(f.column) - W / 2}px;width:${W}px;color:${f.color}`}>
               {f.label}
             </div>
           ))
@@ -84,8 +89,9 @@ const clientData = {
               type="button"
               class="node"
               data-id={p.id}
+              title={p.name}
               aria-pressed="false"
-              style={`left:${p.x - W / 2}px;top:${p.y - H / 2}px;width:${W}px;height:${H}px;--c:${families[p.family].color}`}
+              style={`left:${sx(p.x) - W / 2}px;top:${p.y - H / 2}px;width:${W}px;height:${H}px;--c:${families[p.family].color}`}
             >
               <span class="node-top">
                 <span>{displayYear(p)}</span>
@@ -388,7 +394,8 @@ const clientData = {
     display: block;
     margin-top: 2px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
+    letter-spacing: -0.01em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

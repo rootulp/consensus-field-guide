@@ -1,0 +1,106 @@
+---
+import '../../styles/sim.css';
+import { LEADERS, VIEWS } from '../../lib/sims/simplex';
+---
+
+<section class="sim" data-sim="simplex" aria-labelledby="simplex-sim-h">
+  <div class="sim-head">
+    <h2 id="simplex-sim-h">Watch: seven views, one bad leader</h2>
+    <div class="sim-controls">
+      <button type="button" class="btn" data-act="play">Pause</button>
+      <button type="button" class="btn btn-quiet" data-act="step">Step</button>
+      <button type="button" class="btn btn-quiet" data-act="restart">Restart</button>
+      <button type="button" class="btn btn-quiet" data-act="faulty" aria-pressed="true">View 4 leader offline</button>
+    </div>
+  </div>
+
+  <div class="sim-scroll">
+    <ol class="sim-views" style={`grid-template-columns: repeat(${VIEWS}, minmax(112px, 1fr)); min-width: 860px`}>
+      {
+        LEADERS.map((leader, i) => (
+          <li class="sim-view" data-view={i} data-status="pending">
+            <div class="sim-view-top">
+              <span>view {i + 1}</span>
+              <span>{leader}</span>
+            </div>
+            <div class="sim-block" data-block>—</div>
+            <div class="sim-chip" data-chip>not started</div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+
+  <p class="sim-caption" aria-live="polite" data-caption>Press play to watch Simplex run.</p>
+
+  <div class="sim-legend">
+    <span><i style="border: 2px solid var(--accent)"></i>proposed by the view’s leader (P1–P4)</span>
+    <span><i style="background: var(--accent)"></i>notarized: 2/3 voted, next view starts</span>
+    <span><i style="background: var(--good)"></i>finalized: 2/3 sent finalize</span>
+    <span><i style="background: #8a8f99"></i>nullified: timed out</span>
+  </div>
+</section>
+
+<script>
+  import { initialState, step, LEADERS, type SimplexState, type SimplexStatus } from '../../lib/sims/simplex';
+
+  const CHIP: Record<SimplexStatus, string> = {
+    pending: 'not started',
+    proposed: 'collecting votes',
+    waiting: 'leader silent…',
+    notarized: 'notarized',
+    finalized: 'final ✓',
+    nullified: 'nullified',
+  };
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-sim="simplex"]')) {
+    let s: SimplexState = initialState(true);
+    let playing = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const views = [...root.querySelectorAll<HTMLElement>('[data-view]')];
+    const caption = root.querySelector<HTMLElement>('[data-caption]')!;
+    const playBtn = root.querySelector<HTMLButtonElement>('[data-act="play"]')!;
+    const faultyBtn = root.querySelector<HTMLButtonElement>('[data-act="faulty"]')!;
+
+    const render = () => {
+      views.forEach((el, i) => {
+        const status = s.st[i];
+        if (el.dataset.status !== status) el.dataset.status = status;
+        el.classList.toggle('active', i === s.cur);
+        el.querySelector('[data-block]')!.textContent =
+          status === 'pending' ? '—' : status === 'waiting' ? '?' : status === 'nullified' ? '⊥' : `B${i + 1}`;
+        el.querySelector('[data-chip]')!.textContent = CHIP[status];
+        el.querySelector(".sim-view-top span:last-child")!.textContent = LEADERS[i];
+      });
+      caption.textContent = s.last || 'Press play to watch Simplex run.';
+      playBtn.textContent = playing ? 'Pause' : 'Play';
+      faultyBtn.setAttribute('aria-pressed', String(s.leaderOffline));
+    };
+
+    const advance = () => {
+      s = step(s);
+      render();
+    };
+
+    playBtn.addEventListener('click', () => {
+      playing = !playing;
+      render();
+    });
+    root.querySelector('[data-act="step"]')!.addEventListener('click', () => {
+      playing = false;
+      advance();
+    });
+    root.querySelector('[data-act="restart"]')!.addEventListener('click', () => {
+      s = initialState(s.leaderOffline);
+      render();
+    });
+    faultyBtn.addEventListener('click', () => {
+      s = initialState(!s.leaderOffline);
+      render();
+    });
+
+    setInterval(() => {
+      if (playing) advance();
+    }, 1500);
+    render();
+  }
+</script>

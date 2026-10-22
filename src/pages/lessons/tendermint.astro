@@ -1,0 +1,174 @@
+---
+import Lesson from '../../layouts/Lesson.astro';
+import Quiz from '../../components/Quiz.astro';
+import TendermintSim from '../../components/sims/TendermintSim.astro';
+
+const papers = [
+  {
+    title: 'Tendermint: Consensus without Mining',
+    authors: 'Jae Kwon',
+    year: '2014',
+    href: 'https://tendermint.com/static/docs/tendermint.pdf',
+    note: 'the original whitepaper',
+  },
+  {
+    title: 'Tendermint: Byzantine Fault Tolerance in the Age of Blockchains',
+    authors: 'Ethan Buchman',
+    year: '2016',
+    href: 'https://atrium.lib.uoguelph.ca/handle/10214/9769',
+    note: 'master’s thesis; the most readable full account',
+  },
+  {
+    title: 'The latest gossip on BFT consensus',
+    authors: 'Ethan Buchman, Jae Kwon & Zarko Milosevic',
+    year: '2018',
+    href: 'https://arxiv.org/abs/1807.04938',
+    note: 'the formal algorithm with proofs',
+  },
+  {
+    title: 'CometBFT documentation',
+    authors: 'CometBFT maintainers',
+    year: 'ongoing',
+    href: 'https://docs.cometbft.com/',
+    note: 'the maintained implementation',
+  },
+];
+---
+
+<Lesson
+  id="tm"
+  dek="The protocol that took 1990s Byzantine fault tolerance and made it run a public, proof-of-stake blockchain, where every committed block is final."
+  before={['Byzantine Generals', 'PBFT', 'Bitcoin']}
+  papers={papers}
+>
+  <TendermintSim slot="sim" />
+
+  <h2>The problem it solved</h2>
+  <p>
+    By 2014 there were two working answers to "how do strangers agree?", and neither fit a proof-of-stake blockchain.
+  </p>
+  <p>
+    <strong>PBFT</strong> (1999) gave fast, final agreement, but for a fixed cluster of servers run by one organization
+    and wired directly to each other. <strong>Bitcoin</strong> (2008) let anyone join, but its blocks are never
+    strictly final. A deeper chain can always replace them, so you wait for "confirmations" and accept a small risk.
+  </p>
+  <p>
+    Jae Kwon's question was: if validators are identified by the coins they lock up as stake, can they run PBFT-style
+    voting over the open internet and get blocks that are final the moment they are committed? Tendermint is the
+    answer.
+  </p>
+
+  <h2>How one height works</h2>
+  <p>Each block height is decided in one or more <strong>rounds</strong>. A round has three steps:</p>
+  <ol>
+    <li>
+      <strong>Propose.</strong> A designated proposer broadcasts a block. The proposer rotates, weighted by stake, so no
+      validator leads for long.
+    </li>
+    <li>
+      <strong>Prevote.</strong> Each validator gossips a prevote for the block, or for <code>nil</code> if it saw no
+      valid block in time.
+    </li>
+    <li>
+      <strong>Precommit.</strong> A validator that sees prevotes from more than 2/3 of voting power for the same block
+      (a <em>polka</em>) locks on that block and precommits it.
+    </li>
+  </ol>
+  <p>
+    Once more than 2/3 precommit the same block, it is <strong>committed</strong> and final. If a round fails because the
+    proposer was offline or votes split, everyone times out and starts the next round with the next proposer.
+  </p>
+
+  <h2>Why "more than 2/3"?</h2>
+  <p>
+    Assume fewer than 1/3 of voting power is Byzantine. Any two groups that each hold more than 2/3 of the power must
+    overlap in more than 1/3. That overlap can't be entirely Byzantine, so it contains at least one honest validator,
+    and an honest validator never votes for two different blocks at the same step. So two conflicting blocks can never
+    both collect a quorum.
+  </p>
+  <p>
+    This <em>quorum intersection</em> argument is the same one that makes Paxos work with simple majorities. Tendermint
+    needs the bigger 2/3 quorums because some voters may lie.
+  </p>
+
+  <h2>The clever part: locking</h2>
+  <p>
+    Rounds create a danger. Suppose a few validators precommit block A in round 0, but not enough for a commit, and in
+    round 1 the network moves to block B. If A had in fact been committed somewhere, choosing B would fork the chain.
+  </p>
+  <p>
+    Tendermint prevents this with <strong>locks</strong>. A validator that precommits a block locks on it, and in later
+    rounds it prevotes only that block. It releases the lock only if it sees a polka for a different block in a
+    later round, which proves the network has safely moved on. Locks are what make it safe to change proposers again
+    and again without ever committing two blocks at the same height.
+  </p>
+
+  <h2>Accountability</h2>
+  <p>
+    Every vote is signed. A validator who signs two conflicting votes at the same height and round leaves
+    cryptographic evidence that anyone can submit to the chain, and its stake can be <em>slashed</em>. Bitcoin can't do
+    this: a miner who builds on two forks hasn't signed anything. Tendermint makes misbehavior provable and costly.
+  </p>
+
+  <h2>Trade-offs</h2>
+  <ul>
+    <li>
+      <strong>Safety over liveness.</strong> If more than 1/3 of voting power goes offline, the chain stops. It never
+      forks. Try "V3 + V4 offline" in the animation above. Bitcoin makes the opposite choice: it keeps producing blocks
+      during a network split and resolves forks later.
+    </li>
+    <li>
+      <strong>Quadratic messages.</strong> Every validator's vote reaches every other validator, so traffic grows with
+      the square of the validator count. That's one reason Tendermint chains typically run with up to a few hundred
+      validators.
+    </li>
+    <li>
+      <strong>Not optimistically responsive.</strong> After a failed round, a new proposer has to wait out a timeout
+      sized for the worst-case network delay, even when the network is fast. HotStuff (2018) was designed largely to
+      remove that wait.
+    </li>
+  </ul>
+
+  <h2>Where it runs today</h2>
+  <p>
+    Tendermint Core became the engine of the Cosmos ecosystem, and dozens of independent chains run it. In 2023 the
+    maintained implementation was renamed <strong>CometBFT</strong>. Celestia runs on celestia-core, a fork of
+    CometBFT.
+  </p>
+
+  <Fragment slot="side">
+    <div class="box">
+      <h3>How it compares</h3>
+      <table>
+        <thead>
+          <tr><th></th><th>Who can join</th><th>Finality</th><th>If too many fail</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>PBFT</td><td>fixed set</td><td>immediate</td><td>halts</td></tr>
+          <tr><td>Bitcoin</td><td>anyone</td><td>probabilistic</td><td>keeps going, may fork</td></tr>
+          <tr><td>Tendermint</td><td>stakers</td><td>immediate</td><td>halts</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <Quiz
+      question="Why does a Tendermint vote need more than 2/3 of voting power, not just a majority?"
+      options={[
+        { text: 'Because a majority is too slow to collect' },
+        { text: 'So any two quorums overlap in at least one honest validator, even with up to 1/3 lying', correct: true },
+        { text: 'Because 2/3 of validators are always online' },
+      ]}
+      right="Right. Two quorums of more than 2/3 overlap in more than 1/3, which must include an honest validator, and honest validators never vote for two blocks."
+      wrong="Not quite. Speed and uptime aren’t the reason. It’s quorum intersection: two quorums of more than 2/3 always share an honest validator."
+    />
+    <Quiz
+      question="Half the validators go offline. What does Tendermint do?"
+      options={[
+        { text: 'Keeps producing blocks and resolves forks later' },
+        { text: 'Halts until enough validators return, without forking', correct: true },
+        { text: 'Lowers the quorum to 1/2 automatically' },
+      ]}
+      right="Right. Tendermint prefers safety: with 1/2 offline, no vote can reach the 2/3 quorum, so it waits."
+      wrong="Not quite. That describes Bitcoin. Tendermint never lowers its quorum, so it halts rather than risk a fork."
+    />
+  </Fragment>
+</Lesson>

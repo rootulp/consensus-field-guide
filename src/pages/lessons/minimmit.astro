@@ -1,0 +1,169 @@
+---
+import Lesson from '../../layouts/Lesson.astro';
+import Quiz from '../../components/Quiz.astro';
+import MinimmitSim from '../../components/sims/MinimmitSim.astro';
+
+const papers = [
+  {
+    title: 'Minimmit: Fast Finality with Even Faster Blocks',
+    authors: 'Brendan Kobayashi Chou, Andrew Lewis-Pye & Patrick O’Grady',
+    year: '2025',
+    href: 'https://arxiv.org/abs/2508.10862',
+    note: 'the paper, with proofs',
+  },
+  {
+    title: 'Minimmit specification',
+    authors: 'Commonware',
+    year: '2025',
+    href: 'https://github.com/commonwarexyz/monorepo/blob/main/pipeline/minimmit/minimmit.md',
+    note: 'a short, precise spec; this lesson follows its notation',
+  },
+  {
+    title: 'Multimmit: Extending Blocks for Faster Finality',
+    authors: 'Andrew Lewis-Pye & Patrick O’Grady',
+    year: '2026',
+    href: 'https://arxiv.org/abs/2607.21021',
+    note: 'draft; the follow-up described at the end of this lesson',
+  },
+];
+---
+
+<Lesson
+  id="mm"
+  dek="What if one round of votes could both move the chain forward and make blocks final? Minimmit does it by using two thresholds, at the cost of tolerating fewer faulty replicas."
+  before={['Simplex']}
+  papers={papers}
+>
+  <MinimmitSim slot="sim" />
+
+  <h2>The question</h2>
+  <p>
+    Simplex needs two rounds of votes to finalize a block: notarize, then finalize. The first round keeps the chain
+    moving and the second makes blocks permanent. Minimmit, from Commonware researchers, asks whether one round can do
+    both.
+  </p>
+  <p>
+    The answer is yes, if you accept a different fault assumption. Minimmit tolerates <em>f</em> faulty replicas out of
+    <em>n ≥ 5f + 1</em>, so fewer than 20% faulty instead of a third.
+  </p>
+
+  <h2>Two thresholds, one vote</h2>
+  <p>Every replica sends one <code>notarize</code> vote per view. The same votes are counted against two thresholds:</p>
+  <ul>
+    <li>
+      <strong>M = 2f + 1 votes</strong> form a <em>notarization</em>. That's enough to build on, so everyone moves to
+      the next view. With n = 6 and f = 1, that's 3 votes, only 50%. (The spec calls it about 40%, its value when n is
+      large.)
+    </li>
+    <li>
+      <strong>L = n − f votes</strong> finalize the block. With n = 6, that's 5 votes, or about 80% for large n. No
+      second round is needed. Those are the same votes, just more of them.
+    </li>
+  </ul>
+  <p>
+    In the animation, watch each view's vote meter: it crosses the first line, the next view starts, and votes keep
+    arriving until it crosses the second line and turns green. The name comes from the small proofs: each
+    <code>2f + 1</code> notarization is a "mini" + "commit".
+  </p>
+
+  <h2>Why it's safe</h2>
+  <p>
+    The key fact is that any L-set and any M-set of replicas overlap in an honest one. Together they hold
+    <em>(n − f) + (2f + 1) = n + f + 1</em> votes, so they share at least <em>f + 1</em> replicas, and at most
+    <em>f</em> of those can be faulty.
+  </p>
+  <p>
+    Suppose block B is finalized in view <em>v</em> with L votes. For the chain to skip B, some replicas would need a
+    nullification of view <em>v</em>: an M-set of nullify votes. That M-set would overlap B's L-set in an honest replica
+    who voted for B and then nullified. Honest replicas only do that once they can prove B can't be finalized (see
+    "nullify by contradiction" below), which contradicts B being final. So a finalized block can never be skipped.
+  </p>
+  <p>
+    Keeping the protocol live with such a small threshold for moving on, so that every view eventually produces some
+    certificate even with an equivocating leader, is what requires <em>n ≥ 5f + 1</em> rather than Simplex's
+    <em>3f + 1</em>. The paper has the full proof.
+  </p>
+
+  <h2>When the leader fails</h2>
+  <p>A view can end without a block in two ways.</p>
+  <ul>
+    <li>
+      <strong>Nullify by timeout.</strong> If no valid proposal arrives within 2Δ, a replica votes <code>nullify</code>,
+      and 2f + 1 nullify votes move everyone on. Try "R6 offline" in the animation.
+    </li>
+    <li>
+      <strong>Nullify by contradiction.</strong> A replica that already voted to notarize may switch to nullify, but
+      only once it has seen 2f + 1 votes that conflict with its block (nullifies, or votes for a different block). At
+      least f + 1 of those come from honest replicas who will never vote for its block, so the block can reach at
+      most n − (f + 1) votes, short of L. Nullifying is then safe.
+    </li>
+  </ul>
+  <p>
+    Per the spec, a crashed leader delays the network by at most 3Δ and an equivocating leader by at most 4Δ, compared
+    with 4Δ for Simplex using a 3Δ timer.
+  </p>
+
+  <h2>What you give up</h2>
+  <ul>
+    <li>
+      <strong>Fault tolerance.</strong> Fewer than 20% faulty replicas, not 33%. Try "R5 + R6 offline": with more than f
+      offline, views still get notarized and the chain keeps growing, but no block can reach L votes, so nothing
+      becomes final.
+    </li>
+    <li>
+      <strong>Forks under partition.</strong> Because notarizations need only 2f + 1, two halves of a split network can
+      each keep moving through views. Neither can finalize, and the spec suggests limiting how far views may run ahead
+      of finality.
+    </li>
+  </ul>
+
+  <h2>What came next: Multimmit</h2>
+  <p>
+    In July 2026, Andrew Lewis-Pye and Patrick O'Grady posted <strong>Multimmit</strong>, still a draft. It keeps
+    Minimmit's one-round voting and <em>n ≥ 5f + 1</em>, and adds many block producers working in parallel, building on
+    Aptos's Raptr. Each vote refers to the leader's proposal, says how far it supports each producer's chain, and may
+    vouch for fresh blocks beyond it.
+  </p>
+  <p>
+    The draft claims a faulty producer can only delay its own chain, and that a block is ordered within about three
+    network delays of being sent out, two at best. The protocol is too new for this guide to teach in depth, and its
+    claims haven't been independently checked yet. It's on the family tree as the current frontier.
+  </p>
+
+  <Fragment slot="side">
+    <div class="box">
+      <h3>Simplex vs. Minimmit</h3>
+      <table>
+        <thead>
+          <tr><th></th><th>Simplex</th><th>Minimmit</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Faulty replicas</td><td>&lt; 1/3</td><td>&lt; 1/5</td></tr>
+          <tr><td>Next view at</td><td>2f + 1 of 3f + 1</td><td>2f + 1 of 5f + 1</td></tr>
+          <tr><td>Final after</td><td>2 vote rounds</td><td>1 vote round, n − f votes</td></tr>
+          <tr><td>Crashed leader costs</td><td>4Δ (3Δ timer)</td><td>3Δ (2Δ timer)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <Quiz
+      question="With n = 6 and f = 1, how many notarize votes move the chain to the next view, and how many finalize?"
+      options={[
+        { text: '4 to move on, 6 to finalize' },
+        { text: '3 to move on, 5 to finalize', correct: true },
+        { text: '5 to move on, 5 to finalize' },
+      ]}
+      right="Right. M = 2f + 1 = 3 and L = n − f = 5, both counted from the same single round of votes."
+      wrong="Not quite. M = 2f + 1 = 3 votes move the chain on; L = n − f = 5 votes make the block final."
+    />
+    <Quiz
+      question="A replica voted to notarize block B, then saw 2f + 1 votes that conflict with B. Why may it now vote nullify?"
+      options={[
+        { text: 'Because its timer expired' },
+        { text: 'At least f + 1 honest replicas oppose B, so B can never reach n − f votes', correct: true },
+        { text: 'Because the leader must be Byzantine' },
+      ]}
+      right="Right. With f + 1 honest replicas never voting for B, B tops out at n − f − 1 votes, so it can’t be finalized and nullifying is safe."
+      wrong="Not quite. Timers don’t matter here, and the leader may be honest. The count is what matters: B can no longer reach n − f votes."
+    />
+  </Fragment>
+</Lesson>

@@ -32,8 +32,8 @@ with GitHub’s official Pages actions. It uses the built-in `GITHUB_TOKEN` with
 Pages and OIDC permissions; no deployment token needs to be stored as a secret.
 
 The existing CI workflow also runs browser tests for pull requests. Review CI before merging.
-This hosting change includes the pending glossary from PR #3 and adapts its links to the project path.
-PR #3 can be closed as superseded once this combined change is merged.
+The glossary is included in the site. Its navigation and related-lesson links use the same
+project-path handling as the rest of the guide.
 
 ## Project-path handling
 

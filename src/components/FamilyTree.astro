@@ -1,0 +1,495 @@
+---
+import { displayYear, edges, families, lessonHref, protocols, byId } from '../data/protocols';
+
+const W = 164;
+const H = 56;
+const WIDTH = 1000;
+const HEIGHT = 980;
+
+const decades = [
+  { y: 70, label: '1980s' },
+  { y: 270, label: '1990s' },
+  { y: 360, label: '2000s' },
+  { y: 510, label: '2010s' },
+  { y: 690, label: '2020s' },
+];
+
+const paths = edges.map(([from, to]) => {
+  const a = byId[from];
+  const b = byId[to];
+  const midY = (a.y + b.y) / 2;
+  return { from, to, d: `M ${a.x} ${a.y + H / 2} C ${a.x} ${midY}, ${b.x} ${midY}, ${b.x} ${b.y - H / 2}` };
+});
+
+const filters = [
+  { id: 'all', label: 'Everything' },
+  { id: 'todo', label: 'Not read yet' },
+  { id: 'crash', label: 'Crash-fault' },
+  { id: 'final', label: 'Final once committed' },
+  { id: 'prob', label: 'Probabilistic finality' },
+];
+
+const clientData = {
+  protocols: protocols.map((p) => ({
+    id: p.id,
+    name: p.name,
+    year: displayYear(p),
+    who: p.who,
+    gift: p.gift,
+    tags: p.tags,
+    family: p.family,
+    href: lessonHref(p) ?? null,
+    lesson: p.lesson ?? null,
+    minutes: p.minutes ?? null,
+  })),
+  edges,
+  families,
+};
+---
+
+<div class="tree-ui">
+  <div class="filters" role="group" aria-label="Highlight protocols">
+    {
+      filters.map((f) => (
+        <button type="button" class="btn btn-quiet" data-filter={f.id} aria-pressed={f.id === 'all' ? 'true' : 'false'}>
+          {f.label}
+        </button>
+      ))
+    }
+  </div>
+
+  <div class="layout">
+    <div class="canvas-box">
+      <div class="canvas" style={`width:${WIDTH}px;height:${HEIGHT}px`}>
+        {
+          decades.map((d) => (
+            <div class="decade" style={`top:${d.y - 38}px`}>
+              {d.label}
+            </div>
+          ))
+        }
+        {
+          Object.values(families).map((f) => (
+            <div class="column" style={`left:${f.column - W / 2}px;width:${W}px;color:${f.color}`}>
+              {f.label}
+            </div>
+          ))
+        }
+        <svg width={WIDTH} height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} aria-hidden="true">
+          {paths.map((p) => <path d={p.d} data-from={p.from} data-to={p.to} />)}
+        </svg>
+        {
+          protocols.map((p) => (
+            <button
+              type="button"
+              class="node"
+              data-id={p.id}
+              aria-pressed="false"
+              style={`left:${p.x - W / 2}px;top:${p.y - H / 2}px;width:${W}px;height:${H}px;--c:${families[p.family].color}`}
+            >
+              <span class="node-top">
+                <span>{displayYear(p)}</span>
+                <span class="node-status" data-status />
+              </span>
+              <span class="node-name">{p.name}</span>
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <aside class="panel" aria-live="polite">
+      <div class="card" data-panel>
+        <div class="row">
+          <span class="chip" data-field="family" />
+          <span class="mono" data-field="year" />
+        </div>
+        <h2 data-field="name" />
+        <div class="who" data-field="who" />
+        <p class="gift" data-field="gift" />
+        <div>
+          <div class="label">Built on</div>
+          <div class="pills" data-field="parents" />
+        </div>
+        <div>
+          <div class="label">Led to</div>
+          <div class="pills" data-field="children" />
+        </div>
+        <div class="cta-row">
+          <span class="meta" data-field="meta" />
+          <a class="btn btn-primary" data-field="cta" href="#">Start lesson →</a>
+          <span class="btn" aria-disabled="true" data-field="soon" hidden>Lesson coming later</span>
+        </div>
+      </div>
+      <div class="hint">
+        <strong>New here?</strong>
+        <p>
+          Start at the top with the Byzantine Generals and follow any line down. The blue Blockchain BFT line, from
+          Tendermint to Simplex to Minimmit, is the fastest route to the frontier.
+        </p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script type="application/json" id="tree-data" set:html={JSON.stringify(clientData)} />
+
+<script>
+  import { readLessons } from '../lib/progress';
+
+  interface P {
+    id: string;
+    name: string;
+    year: string;
+    who: string;
+    gift: string;
+    tags: string[];
+    family: string;
+    href: string | null;
+    lesson: string | null;
+    minutes: number | null;
+  }
+  interface Data {
+    protocols: P[];
+    edges: [string, string][];
+    families: Record<string, { label: string; color: string }>;
+  }
+
+  const data: Data = JSON.parse(document.getElementById('tree-data')!.textContent!);
+  const byId = new Map(data.protocols.map((p) => [p.id, p]));
+  const read = readLessons();
+  const isRead = (p: P) => !!p.lesson && read.has(p.lesson);
+
+  const params = new URLSearchParams(location.search);
+  let selected = byId.has(params.get('p') ?? '') ? params.get('p')! : 'spx';
+  let filter = 'all';
+
+  const nodes = [...document.querySelectorAll<HTMLButtonElement>('.node')];
+  const paths = [...document.querySelectorAll<SVGPathElement>('.canvas path')];
+  const filterButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+  const field = (name: string) => document.querySelector<HTMLElement>(`[data-field="${name}"]`)!;
+
+  const matches = (p: P) => {
+    if (filter === 'all') return true;
+    if (filter === 'todo') return !isRead(p);
+    return p.tags.includes(filter);
+  };
+
+  function pill(p: P): HTMLButtonElement {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pill';
+    b.textContent = p.name;
+    b.addEventListener('click', () => select(p.id));
+    return b;
+  }
+
+  function fillPills(el: HTMLElement, list: P[], empty: string) {
+    el.replaceChildren(...list.map(pill));
+    if (!list.length) {
+      const s = document.createElement('span');
+      s.className = 'empty';
+      s.textContent = empty;
+      el.append(s);
+    }
+  }
+
+  function render() {
+    const sel = byId.get(selected)!;
+    const fam = data.families[sel.family];
+    const linked = new Set([selected]);
+    data.edges.forEach(([a, b]) => {
+      if (a === selected) linked.add(b);
+      if (b === selected) linked.add(a);
+    });
+
+    nodes.forEach((n) => {
+      const p = byId.get(n.dataset.id!)!;
+      n.setAttribute('aria-pressed', String(p.id === selected));
+      n.classList.toggle('linked', linked.has(p.id));
+      n.classList.toggle('dim', !matches(p));
+      const status = n.querySelector<HTMLElement>('[data-status]')!;
+      status.textContent = isRead(p) ? '✓ read' : p.lesson ? 'lesson' : '';
+      status.dataset.kind = isRead(p) ? 'read' : p.lesson ? 'lesson' : '';
+    });
+    paths.forEach((path) => {
+      const a = byId.get(path.dataset.from!)!;
+      const b = byId.get(path.dataset.to!)!;
+      const hot = a.id === selected || b.id === selected;
+      path.classList.toggle('hot', hot);
+      path.style.stroke = hot ? fam.color : '';
+      path.classList.toggle('dim', !(matches(a) && matches(b)));
+    });
+    filterButtons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filter === filter)));
+
+    const card = document.querySelector<HTMLElement>('[data-panel]')!;
+    card.style.borderTopColor = fam.color;
+    const famEl = field('family');
+    famEl.textContent = fam.label;
+    famEl.style.background = fam.color;
+    field('year').textContent = sel.year;
+    field('name').textContent = sel.name;
+    field('who').textContent = sel.who;
+    field('gift').textContent = sel.gift;
+    fillPills(field('parents'), data.edges.filter(([, c]) => c === selected).map(([p]) => byId.get(p)!), 'A starting point');
+    fillPills(field('children'), data.edges.filter(([p]) => p === selected).map(([, c]) => byId.get(c)!), 'The frontier, for now');
+
+    const cta = field('cta') as HTMLAnchorElement;
+    const soon = field('soon');
+    if (sel.href) {
+      cta.hidden = false;
+      soon.hidden = true;
+      cta.href = sel.href;
+      cta.textContent = isRead(sel) ? 'Review lesson →' : 'Start lesson →';
+      field('meta').textContent = `Lesson · ${sel.minutes} min · live animation`;
+    } else {
+      cta.hidden = true;
+      soon.hidden = false;
+      field('meta').textContent = 'Summary only, for now';
+    }
+  }
+
+  function select(id: string) {
+    selected = id;
+    const url = new URL(location.href);
+    url.searchParams.set('p', id);
+    history.replaceState(null, '', url);
+    render();
+  }
+
+  nodes.forEach((n) => n.addEventListener('click', () => select(n.dataset.id!)));
+  filterButtons.forEach((b) =>
+    b.addEventListener('click', () => {
+      filter = b.dataset.filter!;
+      render();
+    }),
+  );
+  render();
+</script>
+
+<style>
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .layout {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    align-items: flex-start;
+  }
+
+  .canvas-box {
+    flex: 999 1 640px;
+    min-width: 0;
+    border: 1px solid var(--rule);
+    overflow-x: auto;
+  }
+
+  .canvas {
+    position: relative;
+  }
+
+  .canvas svg {
+    position: absolute;
+    inset: 0;
+  }
+
+  .canvas path {
+    fill: none;
+    stroke: #cbd0d8;
+    stroke-width: 1.5;
+    transition: opacity 0.2s;
+  }
+
+  .canvas path.hot {
+    stroke-width: 3;
+  }
+
+  .canvas path.dim {
+    opacity: 0.3;
+  }
+
+  .decade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px dashed var(--rule);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    padding: 4px 8px;
+    text-align: right;
+  }
+
+  .column {
+    position: absolute;
+    top: 12px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .node {
+    position: absolute;
+    z-index: 1;
+    text-align: left;
+    padding: 7px 10px 7px 12px;
+    cursor: pointer;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid #d5d8de;
+    border-left: 5px solid var(--c);
+    transition: opacity 0.2s, box-shadow 0.2s;
+  }
+
+  .node:hover {
+    background: var(--wash);
+  }
+
+  .node.linked {
+    border-color: var(--c);
+  }
+
+  .node[aria-pressed='true'] {
+    border-width: 2px 2px 2px 5px;
+    background: var(--wash);
+    box-shadow: 0 6px 18px rgba(26, 28, 33, 0.12);
+  }
+
+  .node.dim {
+    opacity: 0.3;
+  }
+
+  .node-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .node-status[data-kind='read'] {
+    color: var(--good-ink);
+  }
+
+  .node-status[data-kind='lesson'] {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .node-name {
+    display: block;
+    margin-top: 2px;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .panel {
+    flex: 1 1 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .card {
+    border-top: 4px solid var(--accent);
+    background: var(--wash);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .mono {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .card h2 {
+    margin: 0;
+    font-size: 34px;
+  }
+
+  .who {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: -8px;
+  }
+
+  .gift {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .pills :global(.pill) {
+    min-height: 36px;
+    padding: 6px 12px;
+    border: 1px solid var(--rule-2);
+    background: var(--paper);
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+
+  .pills :global(.pill:hover) {
+    border-color: var(--ink);
+  }
+
+  .pills :global(.empty) {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .cta-row {
+    border-top: 1px solid var(--rule);
+    padding-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .meta {
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+
+  .hint {
+    border: 1px solid var(--rule);
+    padding: 20px;
+    font-size: 15px;
+  }
+
+  .hint p {
+    margin: 6px 0 0;
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+</style>

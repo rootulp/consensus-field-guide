@@ -1,0 +1,136 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Which top-level nav item is current. */
+  nav?: 'tree' | 'lessons' | 'about';
+}
+
+const { title, description, nav } = Astro.props;
+const links = [
+  { id: 'tree', href: '/', label: 'Family tree' },
+  { id: 'lessons', href: '/lessons/', label: 'Lessons' },
+  { id: 'about', href: '/about/', label: 'About' },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    />
+  </head>
+  <body>
+    <a class="skip visually-hidden" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="brand" href="/">The Consensus Field Guide</a>
+      <nav aria-label="Main">
+        {
+          links.map((l) => (
+            <a href={l.href} aria-current={nav === l.id ? 'page' : undefined}>
+              {l.label}
+            </a>
+          ))
+        }
+      </nav>
+      <slot name="header-extra" />
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>
+          A field guide to consensus, from the Byzantine Generals to the frontier. Simulations are simplified teaching
+          models; each lesson links to the original papers.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .skip:focus {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    width: auto;
+    height: auto;
+    clip: auto;
+    padding: 10px 14px;
+    background: var(--ink);
+    color: #fff;
+    z-index: 10;
+  }
+
+  .site-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 24px;
+    padding: 14px 48px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .brand {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 20px;
+    font-size: 15px;
+  }
+
+  nav a {
+    color: var(--muted);
+    text-decoration: none;
+    padding: 10px 0;
+    border-bottom: 2px solid transparent;
+  }
+
+  nav a:hover {
+    color: var(--ink);
+  }
+
+  nav a[aria-current='page'] {
+    color: var(--ink);
+    border-bottom-color: var(--accent);
+  }
+
+  .site-footer {
+    margin-top: 80px;
+    border-top: 1px solid var(--rule);
+    padding: 24px 0 40px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .site-footer p {
+    margin: 0;
+    max-width: 720px;
+  }
+
+  @media (max-width: 720px) {
+    .site-header {
+      padding: 12px 16px;
+    }
+  }
+</style>

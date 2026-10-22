@@ -19,6 +19,17 @@
   font-weight: 600;
 }
 
+.sim-controls { width: 100%; align-items: center; }
+.sim-speed { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.sim-speed select { font: inherit; min-height: 44px; padding: 6px; background: var(--paper); color: var(--ink); border: 1px solid var(--rule-2); }
+.sim-help, .sim-playback { margin: 0; font-size: 14px; color: var(--muted); }
+.sim-playback { font-family: var(--mono); }
+.btn:disabled { opacity: .55; cursor: default; }
+.sim-view[data-changed='true'] { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sim-view::after { content: ''; min-height: 1.5em; font-size: 12px; font-weight: 600; color: var(--accent-ink); }
+.sim-view[data-changed='true']::after { content: 'Changed this step'; }
+.sim-caption { padding: 16px; background: var(--wash-blue); border-left: 4px solid var(--accent); }
+
 .sim-controls {
   display: flex;
   flex-wrap: wrap;
@@ -131,7 +142,7 @@
 [data-status='nullified'] .sim-chip { background: var(--muted); color: #fff; }
 
 .sim-view:not([data-status='pending']) .sim-block {
-  animation: sim-rise 0.35s ease-out both;
+  animation: sim-rise 0.7s ease-out both;
 }
 
 @keyframes sim-rise {
@@ -149,4 +160,13 @@
   .sim {
     padding: 16px;
   }
+}
+
+/* Keep each view legible on phones instead of hiding later views off-screen. */
+@media (max-width: 720px) {
+  .sim-views {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    min-width: 0 !important;
+  }
+  .sim-view-top { flex-wrap: wrap; gap: 4px; }
 }

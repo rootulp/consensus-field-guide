@@ -125,9 +125,10 @@ const papers = [
     vouch for fresh blocks beyond it.
   </p>
   <p>
-    The draft claims a faulty producer can only delay its own chain, and that a block is ordered within about three
-    network delays of being sent out, two at best. The protocol is too new for this guide to teach in depth, and its
-    claims haven't been independently checked yet. It's on the family tree as the current frontier.
+    The draft separates a block’s guaranteed inclusion from its placement in the total order. Missing data lowers
+    the affected chain’s supported tip; a lagging slot can still delay total-order placement. The <a href="/lessons/multimmit/">Multimmit lesson</a> walks through the draft’s per-chain position rules and
+    distinguishes membership finality from placement in the total order. Its walkthrough is a teaching example,
+    not an independent validation of the draft’s proofs.
   </p>
 
   <Fragment slot="side">

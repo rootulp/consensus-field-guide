@@ -357,6 +357,8 @@ const nodeHref = (q: typeof p) => lessonHref(q) ?? `/?p=${q.id}`;
   }
 
   .side {
+    min-width: 0;
+    max-width: 100%;
     flex: 1 1 320px;
     display: flex;
     flex-direction: column;
@@ -364,6 +366,7 @@ const nodeHref = (q: typeof p) => lessonHref(q) ?? `/?p=${q.id}`;
   }
 
   .side :global(.box) {
+    overflow-x: auto;
     background: var(--wash-blue);
     padding: 22px;
   }

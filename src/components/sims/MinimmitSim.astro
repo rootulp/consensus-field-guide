@@ -1,16 +1,13 @@
 ---
 import '../../styles/sim.css';
+import PlaybackControls from './PlaybackControls.astro';
 import { L, LEADERS, M, N, VIEWS } from '../../lib/sims/minimmit';
 ---
 
 <section class="sim" data-sim="minimmit" aria-labelledby="mm-sim-h">
   <div class="sim-head">
     <h2 id="mm-sim-h">Watch: one round of votes, two thresholds</h2>
-    <div class="sim-controls">
-      <button type="button" class="btn" data-act="play">Pause</button>
-      <button type="button" class="btn btn-quiet" data-act="step">Step</button>
-      <button type="button" class="btn btn-quiet" data-act="restart">Restart</button>
-    </div>
+    <PlaybackControls />
   </div>
 
   <div class="mm-top">
@@ -60,8 +57,10 @@ import { L, LEADERS, M, N, VIEWS } from '../../lib/sims/minimmit';
 </section>
 
 <script>
+  import { setupPlayback } from '../../lib/playback';
   import {
     initialState,
+    isDone,
     isOffline,
     setOffline,
     step,
@@ -82,7 +81,6 @@ import { L, LEADERS, M, N, VIEWS } from '../../lib/sims/minimmit';
 
   for (const root of document.querySelectorAll<HTMLElement>('[data-sim="minimmit"]')) {
     let s: MinimmitState = initialState(0);
-    let playing = !matchMedia('(prefers-reduced-motion: reduce)').matches;
     const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
     const views = [...root.querySelectorAll<HTMLElement>('[data-view]')];
     const offlineButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-offline]')];
@@ -90,6 +88,8 @@ import { L, LEADERS, M, N, VIEWS } from '../../lib/sims/minimmit';
     const render = () => {
       views.forEach((el, i) => {
         const v = s.views[i];
+        el.dataset.changed = String(el.dataset.status !== v.status || el.dataset.votes !== String(v.votes));
+        el.dataset.votes = String(v.votes);
         if (el.dataset.status !== v.status) el.dataset.status = v.status;
         el.classList.toggle('active', i === s.cur);
         el.classList.toggle('leader-off', isOffline(s, LEADERS[i]));
@@ -109,7 +109,6 @@ import { L, LEADERS, M, N, VIEWS } from '../../lib/sims/minimmit';
         }),
       );
       if (!s.events.length) log.textContent = 'Press play to watch Minimmit run.';
-      $('[data-act="play"]').textContent = playing ? 'Pause' : 'Play';
       offlineButtons.forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.offline) === s.offlineCount)));
     };
 
@@ -118,28 +117,18 @@ import { L, LEADERS, M, N, VIEWS } from '../../lib/sims/minimmit';
       render();
     };
 
-    $('[data-act="play"]').addEventListener('click', () => {
-      playing = !playing;
-      render();
-    });
-    $('[data-act="step"]').addEventListener('click', () => {
-      playing = false;
-      advance();
-    });
-    $('[data-act="restart"]').addEventListener('click', () => {
-      s = initialState(s.offlineCount);
-      render();
+    const playback = setupPlayback(root, {
+      advance,
+      reset: () => { s = initialState(s.offlineCount); render(); },
+      isDone: () => isDone(s),
     });
     offlineButtons.forEach((b) =>
       b.addEventListener('click', () => {
         s = setOffline(Number(b.dataset.offline));
-        render();
+        playback.reset();
       }),
     );
 
-    setInterval(() => {
-      if (playing) advance();
-    }, 1600);
     render();
   }
 </script>

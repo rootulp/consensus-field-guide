@@ -42,38 +42,38 @@ export interface Protocol {
 export const protocols: Protocol[] = [
   {
     id: 'bg', name: 'Byzantine Generals', year: 1982, family: 'classic', who: 'Lamport, Shostak & Pease',
-    gift: 'Defined the problem every later protocol solves: agree even when some participants lie. Showed you need more than 3f participants to tolerate f liars.',
-    tags: [], x: 300, y: 70,
+    gift: 'Defined the problem every later protocol solves: agree even when some participants lie. In the oral-message model, showed you need more than 3f participants to tolerate f liars.',
+    tags: [], x: 300, y: 70, lesson: 'byzantine-generals', minutes: 10,
   },
   {
     id: 'dls', name: 'Partial synchrony', year: 1988, family: 'classic', who: 'Dwork, Lynch & Stockmeyer',
     gift: 'A network model where messages are eventually delivered on time. Protocols stay safe always and make progress once the network settles. Nearly every modern BFT protocol assumes it.',
-    tags: [], x: 300, y: 160,
+    tags: [], x: 300, y: 160, lesson: 'partial-synchrony', minutes: 10,
   },
   {
     id: 'px', name: 'Paxos', year: 1989, yearLabel: '1989 / 1998', family: 'crash', who: 'Leslie Lamport',
     gift: 'Agreement among machines that may crash but never lie, using majority quorums that always overlap. Written in 1989, published in 1998, and still running inside large databases.',
-    tags: ['crash', 'final'], x: 110, y: 170,
+    tags: ['crash', 'final'], x: 110, y: 170, lesson: 'paxos', minutes: 12,
   },
   {
     id: 'pbft', name: 'PBFT', year: 1999, family: 'classic', who: 'Castro & Liskov',
     gift: 'Made Byzantine agreement fast enough for real systems: three phases of voting among 3f+1 replicas, and a view-change protocol to replace a bad leader.',
-    tags: ['final'], x: 300, y: 270,
+    tags: ['final'], x: 300, y: 270, lesson: 'pbft', minutes: 12,
   },
   {
     id: 'btc', name: 'Bitcoin', year: 2008, family: 'nak', who: 'Satoshi Nakamoto',
     gift: 'Let anyone join without permission by replacing votes with proof-of-work. The heaviest chain wins, so finality is probabilistic.',
-    tags: ['prob'], x: 760, y: 360,
+    tags: ['prob'], x: 760, y: 360, lesson: 'bitcoin', minutes: 11,
   },
   {
     id: 'ppc', name: 'Peercoin', year: 2012, family: 'nak', who: 'King & Nadal',
     gift: 'The first chain to use stake, not just work, to decide who makes blocks.',
-    tags: ['prob'], x: 760, y: 440,
+    tags: ['prob'], x: 760, y: 440, lesson: 'peercoin', minutes: 9,
   },
   {
     id: 'raft', name: 'Raft', year: 2014, family: 'crash', who: 'Ongaro & Ousterhout',
     gift: 'Paxos redesigned to be understandable, built around a strong leader and a replicated log. It runs etcd, and through it Kubernetes.',
-    tags: ['crash', 'final'], x: 110, y: 510,
+    tags: ['crash', 'final'], x: 110, y: 510, lesson: 'raft', minutes: 12,
   },
   {
     id: 'tm', name: 'Tendermint', year: 2014, family: 'chain', who: 'Jae Kwon; Buchman, Kwon & Milosevic',
@@ -83,27 +83,27 @@ export const protocols: Protocol[] = [
   {
     id: 'eth', name: 'Ethereum', year: 2015, family: 'nak', who: 'Buterin et al.',
     gift: 'A programmable blockchain. It launched on proof-of-work and later moved to proof-of-stake.',
-    tags: ['prob'], x: 760, y: 520,
+    tags: ['prob'], x: 760, y: 520, lesson: 'ethereum', minutes: 10,
   },
   {
     id: 'hs', name: 'HotStuff', year: 2018, family: 'chain', who: 'Yin, Malkhi, Reiter, Golan Gueta & Abraham',
     gift: 'The leader collects votes and forwards a certificate, so messages grow linearly with the validator set. A new leader no longer has to wait out the worst-case network delay, and phases pipeline across blocks.',
-    tags: ['final'], x: 540, y: 600,
+    tags: ['final'], x: 540, y: 600, lesson: 'hotstuff', minutes: 12,
   },
   {
     id: 'ava', name: 'Avalanche', year: 2018, family: 'sample', who: 'Team Rocket',
     gift: 'Validators repeatedly poll small random samples of peers until the whole network tips toward one answer.',
-    tags: ['prob'], x: 905, y: 600,
+    tags: ['prob'], x: 905, y: 600, lesson: 'avalanche', minutes: 11,
   },
   {
-    id: 'nb', name: 'Narwhal & Bullshark', year: 2021, family: 'classic', who: 'Danezis, Kokoris-Kogias, Sonnino, Spiegelman et al.',
+    id: 'nb', name: 'Narwhal & Bullshark', year: 2021, yearLabel: '2021 / 2022', family: 'classic', who: 'Danezis, Kokoris-Kogias, Sonnino, Spiegelman et al.',
     gift: 'Separates spreading transactions (a DAG of certified batches) from ordering them, so ordering needs almost no extra messages.',
-    tags: ['final'], x: 320, y: 690,
+    tags: ['final'], x: 320, y: 690, lesson: 'narwhal-bullshark', minutes: 12,
   },
   {
     id: 'gas', name: 'Gasper (The Merge)', year: 2022, family: 'nak', who: 'Buterin et al.',
-    gift: 'Pairs a fork-choice rule (LMD-GHOST) with a finality gadget (Casper FFG): blocks keep coming, and checkpoints become final once two-thirds of stake attest.',
-    tags: ['final'], x: 760, y: 690,
+    gift: 'Pairs a fork-choice rule (LMD-GHOST) with a finality gadget (Casper FFG): blocks keep coming, and supermajority links justify checkpoints and finalize earlier ones.',
+    tags: ['final'], x: 760, y: 690, lesson: 'gasper', minutes: 12,
   },
   {
     id: 'spx', name: 'Simplex', year: 2023, family: 'chain', who: 'Benjamin Y. Chan & Rafael Pass',
@@ -117,13 +117,13 @@ export const protocols: Protocol[] = [
   },
   {
     id: 'raptr', name: 'Raptr', year: 2025, family: 'chain', who: 'Aptos Labs',
-    gift: 'Orders blocks from many producers at once and finalizes the longest prefix of the leader’s proposal that a quorum actually holds.',
-    tags: ['final'], x: 640, y: 800,
+    gift: 'Orders data from many producers using prefix votes: availability certificates identify retrievable prefixes, then commit votes finalize a compatible prefix.',
+    tags: ['final'], x: 640, y: 800, lesson: 'raptr', minutes: 13,
   },
   {
     id: 'mmx', name: 'Multimmit', year: 2026, family: 'chain', who: 'Lewis-Pye & O’Grady (Commonware)',
-    gift: 'Minimmit’s one-round voting with many block producers in parallel. Votes say how far each producer’s chain can be included, so a faulty producer only delays its own chain. Still a draft paper.',
-    tags: ['final'], x: 545, y: 900,
+    gift: 'Minimmit’s one-round voting with many block producers in parallel. Votes say how far each producer’s chain can be included, so missing data lowers that chain’s supported tip. Membership finality and total-order placement are distinct. Still a draft paper.',
+    tags: ['final'], x: 545, y: 900, lesson: 'multimmit', minutes: 13,
   },
 ];
 

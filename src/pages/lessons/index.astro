@@ -5,16 +5,17 @@ import { displayYear, families, lessonHref, lessons } from '../../data/protocols
 
 <Base
   title="Lessons · The Consensus Field Guide"
-  description="Animated lessons on Tendermint, Simplex and Minimmit: the blockchain BFT line from 2014 to the frontier."
+  description="Interactive lessons across the consensus family tree: from Byzantine Generals and Paxos to modern blockchain protocols."
   nav="lessons"
 >
   <div class="wrap-narrow">
     <header class="head">
-      <div class="eyebrow">The blockchain BFT line</div>
+      <div class="eyebrow">The complete family tree</div>
       <h1>Lessons</h1>
       <p>
-        Three protocols, read in order, take you from the first BFT blockchain engine to the frontier. Each lesson has a
-        live animation, the idea it added, its trade-offs, and a couple of questions to check yourself.
+        Seventeen lessons take you from the foundations to the frontier. Follow the historical order, or choose a
+        family from the tree. Each lesson has an interactive walkthrough, the idea it added, its trade-offs,
+        source papers, and questions to check yourself. Diagrams start paused so you can read at your own pace.
       </p>
     </header>
 
@@ -35,7 +36,7 @@ import { displayYear, families, lessonHref, lessons } from '../../data/protocols
                 <a href={lessonHref(p)}>{p.name}</a>
               </h2>
               <p>{p.gift}</p>
-              <span class="mins">{p.minutes} min · live animation · quiz</span>
+              <span class="mins">{p.minutes} min · interactive walkthrough · quiz</span>
             </div>
           </li>
         ))
@@ -43,8 +44,8 @@ import { displayYear, families, lessonHref, lessons } from '../../data/protocols
     </ol>
 
     <p class="more">
-      More lessons are planned for the rest of the <a href="/">family tree</a>, starting with PBFT, HotStuff and
-      Multimmit.
+      Every topic on the <a href="/">family tree</a> now has a lesson. Reading time includes trying the scenarios
+      and quizzes; the frontier lessons identify draft-paper assumptions explicitly.
     </p>
   </div>
 </Base>

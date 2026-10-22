@@ -1,13 +1,14 @@
 ---
 import '../../styles/sim.css';
+import PlaybackControls from './PlaybackControls.astro';
 import { PHASES } from '../../lib/sims/tendermint';
 
 // Validator positions on the 560 x 440 stage: top, right, bottom, left.
 const POS = [
   { x: 280, y: 60 },
-  { x: 500, y: 220 },
-  { x: 280, y: 380 },
-  { x: 60, y: 220 },
+  { x: 480, y: 220 },
+  { x: 280, y: 360 },
+  { x: 80, y: 220 },
 ];
 const links: [number, number][] = [
   [0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3],
@@ -17,10 +18,7 @@ const links: [number, number][] = [
 <section class="sim" data-sim="tendermint" data-pos={JSON.stringify(POS)} aria-labelledby="tm-sim-h">
   <div class="sim-head">
     <h2 id="tm-sim-h">Watch: one block, four validators</h2>
-    <div class="sim-controls">
-      <button type="button" class="btn" data-act="play">Pause</button>
-      <button type="button" class="btn btn-quiet" data-act="step">Step</button>
-    </div>
+    <PlaybackControls />
   </div>
 
   <div class="tm-top">
@@ -34,13 +32,13 @@ const links: [number, number][] = [
 
   <div class="tm-stage-scroll">
     <div class="tm-stage">
-      <svg width="560" height="440" viewBox="0 0 560 440" aria-hidden="true">
+      <svg width="560" height="440" viewBox="0 0 560 440" preserveAspectRatio="none" aria-hidden="true">
         {links.map(([a, b]) => <line x1={POS[a].x} y1={POS[a].y} x2={POS[b].x} y2={POS[b].y} />)}
       </svg>
       <div class="tm-packets" data-packets aria-hidden="true"></div>
       {
         POS.map((p, i) => (
-          <div class="tm-validator" data-v={i} style={`left:${p.x - 75}px;top:${p.y - 32}px`}>
+          <div class="tm-validator" data-v={i} style={`left:${(p.x / 560) * 100}%;top:${p.y - 32}px`}>
             <div class="tm-circle">V{i + 1}</div>
             <div class="tm-badge" data-badge>waiting</div>
           </div>
@@ -85,6 +83,7 @@ const links: [number, number][] = [
 </section>
 
 <script>
+  import { setupPlayback } from '../../lib/playback';
   import {
     describe,
     initialState,
@@ -103,10 +102,10 @@ const links: [number, number][] = [
     const pos: { x: number; y: number }[] = JSON.parse(root.dataset.pos!);
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     let s: TendermintState = initialState();
-    let playing = !reduce;
 
     const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
     const packets = $('[data-packets]');
+    const stage = $('.tm-stage');
     const validators = [...root.querySelectorAll<HTMLElement>('[data-v]')];
     const phases = [...root.querySelectorAll<HTMLElement>('[data-phase]')];
     const offlineButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-offline]')];
@@ -114,18 +113,19 @@ const links: [number, number][] = [
     function send(from: number, to: number, kind: 'block' | 'prevote' | 'precommit', delay: number) {
       const el = document.createElement('div');
       el.className = `tm-packet tm-${kind}`;
-      el.style.left = `${pos[from].x - 7}px`;
-      el.style.top = `${pos[from].y - 7}px`;
-      packets.append(el);
+      el.style.left = `${(pos[from].x / 560) * 100}%`;
+      el.style.marginLeft = '-9px';
+      el.style.top = `${pos[from].y - 9}px`;
       if (reduce) return;
+      packets.append(el);
       el.animate(
         [
           { transform: 'translate(0, 0)', opacity: 0 },
           { opacity: 1, offset: 0.12 },
           { opacity: 1, offset: 0.88 },
-          { transform: `translate(${pos[to].x - pos[from].x}px, ${pos[to].y - pos[from].y}px)`, opacity: 0 },
+          { transform: `translate(${((pos[to].x - pos[from].x) / 560) * stage.clientWidth}px, ${pos[to].y - pos[from].y}px)`, opacity: 0 },
         ],
-        { duration: 1200, delay, easing: 'ease-in-out', fill: 'both' },
+        { duration: 2200, delay, easing: 'ease-in-out', fill: 'both' },
       );
     }
 
@@ -162,7 +162,12 @@ const links: [number, number][] = [
         else status = s.phase === 3 ? `committed #${s.height}` : STATUS[s.phase];
         el.querySelector('[data-badge]')!.textContent = status;
       });
-      phases.forEach((el, i) => el.classList.toggle('on', i === s.phase && !s.timeout));
+      phases.forEach((el, i) => {
+        const active = i === s.phase && !s.timeout;
+        el.classList.toggle('on', active);
+        if (active) el.setAttribute('aria-current', 'step');
+        else el.removeAttribute('aria-current');
+      });
       $('[data-caption]').textContent = describe(s);
       $('[data-final]').hidden = !(s.phase === 3 && !s.timeout);
 
@@ -181,9 +186,9 @@ const links: [number, number][] = [
           return b;
         }),
       );
-      $('[data-act="play"]').textContent = playing ? 'Pause' : 'Play';
       offlineButtons.forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.offline) === s.offlineCount)));
       if (animate) animatePackets();
+      else packets.replaceChildren();
     }
 
     const advance = () => {
@@ -191,25 +196,20 @@ const links: [number, number][] = [
       render(true);
     };
 
-    $('[data-act="play"]').addEventListener('click', () => {
-      playing = !playing;
-      render(false);
-    });
-    $('[data-act="step"]').addEventListener('click', () => {
-      playing = false;
-      advance();
+    const playback = setupPlayback(root, {
+      advance,
+      reset: () => { s = setOffline(initialState(), s.offlineCount); render(false); },
     });
     offlineButtons.forEach((b) =>
       b.addEventListener('click', () => {
+        playback.pause();
         s = setOffline(s, Number(b.dataset.offline));
-        render(true);
+        render(false);
+        packets.replaceChildren();
       }),
     );
 
-    setInterval(() => {
-      if (playing) advance();
-    }, 2400);
-    render(true);
+    render(false);
   }
 </script>
 
@@ -241,13 +241,15 @@ const links: [number, number][] = [
 
   .tm-stage {
     position: relative;
-    width: 560px;
+    width: 100%;
+    max-width: 560px;
     height: 440px;
     flex: none;
     margin: 0 auto;
   }
 
   .tm-stage svg {
+    width: 100%;
     position: absolute;
     inset: 0;
   }
@@ -259,8 +261,8 @@ const links: [number, number][] = [
 
   .tm-packets :global(.tm-packet) {
     position: absolute;
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     opacity: 0;
   }
 
@@ -281,7 +283,8 @@ const links: [number, number][] = [
 
   .tm-validator {
     position: absolute;
-    width: 150px;
+    width: 27%;
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -320,7 +323,9 @@ const links: [number, number][] = [
     padding: 3px 8px;
     background: #f2f3f5;
     color: var(--ink-2);
-    white-space: nowrap;
+    max-width: 100%;
+    text-align: center;
+    overflow-wrap: anywhere;
   }
 
   .tm-validator.proposer .tm-badge {
@@ -330,7 +335,7 @@ const links: [number, number][] = [
 
   .tm-final {
     position: absolute;
-    left: 230px;
+    left: calc(50% - 50px);
     top: 196px;
     width: 100px;
     height: 48px;

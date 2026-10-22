@@ -1,0 +1,14 @@
+<div class="sim-controls">
+  <button type="button" class="btn" data-act="play" aria-pressed="false">Play</button>
+  <button type="button" class="btn btn-quiet" data-act="step">Step</button>
+  <button type="button" class="btn btn-quiet" data-act="restart">Restart</button>
+  <label class="sim-speed">Time per step
+    <select data-speed aria-label="Time per step">
+      <option value="10000">10 seconds</option>
+      <option value="6000" selected>6 seconds</option>
+      <option value="3000">3 seconds</option>
+    </select>
+  </label>
+</div>
+<p class="sim-help">Start with Step to inspect one change at a time, or Play for automatic playback. The caption explains each step; changed cards are outlined.</p>
+<p class="sim-playback" data-playback-status role="status">Paused · step 0</p>

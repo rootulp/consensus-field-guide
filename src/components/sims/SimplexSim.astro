@@ -1,18 +1,16 @@
 ---
 import '../../styles/sim.css';
+import PlaybackControls from './PlaybackControls.astro';
 import { LEADERS, VIEWS } from '../../lib/sims/simplex';
 ---
 
 <section class="sim" data-sim="simplex" aria-labelledby="simplex-sim-h">
   <div class="sim-head">
     <h2 id="simplex-sim-h">Watch: seven views, one bad leader</h2>
-    <div class="sim-controls">
-      <button type="button" class="btn" data-act="play">Pause</button>
-      <button type="button" class="btn btn-quiet" data-act="step">Step</button>
-      <button type="button" class="btn btn-quiet" data-act="restart">Restart</button>
-      <button type="button" class="btn btn-quiet" data-act="faulty" aria-pressed="true">View 4 leader offline</button>
-    </div>
+    <PlaybackControls />
   </div>
+
+  <button type="button" class="btn btn-quiet" data-act="faulty" aria-pressed="true">View 4 leader offline</button>
 
   <div class="sim-scroll">
     <ol class="sim-views" style={`grid-template-columns: repeat(${VIEWS}, minmax(112px, 1fr)); min-width: 860px`}>
@@ -42,7 +40,8 @@ import { LEADERS, VIEWS } from '../../lib/sims/simplex';
 </section>
 
 <script>
-  import { initialState, step, LEADERS, type SimplexState, type SimplexStatus } from '../../lib/sims/simplex';
+  import { setupPlayback } from '../../lib/playback';
+  import { initialState, isDone, step, LEADERS, type SimplexState, type SimplexStatus } from '../../lib/sims/simplex';
 
   const CHIP: Record<SimplexStatus, string> = {
     pending: 'not started',
@@ -55,15 +54,14 @@ import { LEADERS, VIEWS } from '../../lib/sims/simplex';
 
   for (const root of document.querySelectorAll<HTMLElement>('[data-sim="simplex"]')) {
     let s: SimplexState = initialState(true);
-    let playing = !matchMedia('(prefers-reduced-motion: reduce)').matches;
     const views = [...root.querySelectorAll<HTMLElement>('[data-view]')];
     const caption = root.querySelector<HTMLElement>('[data-caption]')!;
-    const playBtn = root.querySelector<HTMLButtonElement>('[data-act="play"]')!;
     const faultyBtn = root.querySelector<HTMLButtonElement>('[data-act="faulty"]')!;
 
     const render = () => {
       views.forEach((el, i) => {
         const status = s.st[i];
+        el.dataset.changed = String(el.dataset.status !== status);
         if (el.dataset.status !== status) el.dataset.status = status;
         el.classList.toggle('active', i === s.cur);
         el.querySelector('[data-block]')!.textContent =
@@ -72,7 +70,6 @@ import { LEADERS, VIEWS } from '../../lib/sims/simplex';
         el.querySelector(".sim-view-top span:last-child")!.textContent = LEADERS[i];
       });
       caption.textContent = s.last || 'Press play to watch Simplex run.';
-      playBtn.textContent = playing ? 'Pause' : 'Play';
       faultyBtn.setAttribute('aria-pressed', String(s.leaderOffline));
     };
 
@@ -81,26 +78,16 @@ import { LEADERS, VIEWS } from '../../lib/sims/simplex';
       render();
     };
 
-    playBtn.addEventListener('click', () => {
-      playing = !playing;
-      render();
-    });
-    root.querySelector('[data-act="step"]')!.addEventListener('click', () => {
-      playing = false;
-      advance();
-    });
-    root.querySelector('[data-act="restart"]')!.addEventListener('click', () => {
-      s = initialState(s.leaderOffline);
-      render();
+    const playback = setupPlayback(root, {
+      advance,
+      reset: () => { s = initialState(s.leaderOffline); render(); },
+      isDone: () => isDone(s),
     });
     faultyBtn.addEventListener('click', () => {
       s = initialState(!s.leaderOffline);
-      render();
+      playback.reset();
     });
 
-    setInterval(() => {
-      if (playing) advance();
-    }, 1500);
     render();
   }
 </script>

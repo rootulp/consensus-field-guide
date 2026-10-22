@@ -1,0 +1,31 @@
+---
+import Lesson from '../../layouts/Lesson.astro';
+import Quiz from '../../components/Quiz.astro';
+import Walkthrough from '../../components/sims/Walkthrough.astro';
+import { guideLessons } from '../../data/lessons';
+import type { GuideLesson } from '../../data/lessons/types';
+
+export function getStaticPaths() {
+  return guideLessons.map(lesson => ({ params: { slug: lesson.slug }, props: { lesson } }));
+}
+interface Props { lesson: GuideLesson }
+const { lesson } = Astro.props;
+---
+<Lesson id={lesson.id} dek={lesson.dek} before={lesson.before} papers={lesson.papers}>
+  <Walkthrough slot="sim" id={lesson.id} walkthrough={lesson.walkthrough} />
+  {lesson.sections.map(section => <section>
+    <h2>{section.title}</h2>
+    {section.paragraphs.map(paragraph => <p>{paragraph}</p>)}
+    {section.source !== undefined && <p class="section-source">Source: <a href={lesson.papers[section.source].href}>{lesson.papers[section.source].title}</a></p>}
+  </section>)}
+  <h2>What you give up</h2>
+  <ul>{lesson.tradeoffs.map(tradeoff => <li>{tradeoff}</li>)}</ul>
+  <Fragment slot="side">
+    <div class="box"><h3>Keep this idea</h3><p>{lesson.takeaway}</p></div>
+    {lesson.quizzes.map(quiz => <Quiz {...quiz} />)}
+  </Fragment>
+</Lesson>
+<style>
+  section + section { margin-top: 36px; }
+  .section-source { font-size: 14px !important; color: var(--muted); }
+</style>

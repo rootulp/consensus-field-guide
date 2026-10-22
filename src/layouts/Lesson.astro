@@ -48,6 +48,7 @@ const nodeHref = (q: typeof p) => lessonHref(q) ?? `/?p=${q.id}`;
       </div>
       <h1>{p.name}</h1>
       <p class="dek">{dek}</p>
+      <p class="glossary-help">New to the terminology? <a href="/glossary/">Keep the glossary handy →</a></p>
       <div class="row tags">
         <span class="tag">{p.minutes} min</span>
         {before.length > 0 && <span class="tag">Helps to know: {before.join(', ')}</span>}

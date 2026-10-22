@@ -5,13 +5,14 @@ interface Props {
   title: string;
   description: string;
   /** Which top-level nav item is current. */
-  nav?: 'tree' | 'lessons' | 'about';
+  nav?: 'tree' | 'lessons' | 'glossary' | 'about';
 }
 
 const { title, description, nav } = Astro.props;
 const links = [
   { id: 'tree', href: '/', label: 'Family tree' },
   { id: 'lessons', href: '/lessons/', label: 'Lessons' },
+  { id: 'glossary', href: '/glossary/', label: 'Glossary' },
   { id: 'about', href: '/about/', label: 'About' },
 ];
 ---

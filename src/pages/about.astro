@@ -1,0 +1,73 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="About · The Consensus Field Guide"
+  description="What the Consensus Field Guide is for, and how to read it."
+  nav="about"
+>
+  <div class="wrap-narrow prose about">
+    <div class="eyebrow">About</div>
+    <h1>A field guide, not a textbook</h1>
+    <p>
+      Blockchain consensus moves fast, and most of what's written about it is either a 40-page paper or a one-line
+      marketing claim. This guide sits in between. Its goal is to take a curious engineer from "how do strangers agree
+      at all?" to the protocols being published today.
+    </p>
+
+    <h2>How to read it</h2>
+    <ul>
+      <li>
+        <strong>The family tree</strong> is the map. Every protocol appears once, placed by when it appeared and which
+        family it belongs to. Lines show which earlier ideas each one built on.
+      </li>
+      <li>
+        <strong>Lessons</strong> are the depth. Each has a live animation you can break (take validators offline and
+        watch what happens), the one idea it added, what it gave up, and a couple of questions to check yourself.
+      </li>
+    </ul>
+
+    <h2>About the animations</h2>
+    <p>
+      The simulations are teaching models, not implementations. They use a handful of validators, fixed message timing,
+      and simplified rules, to show the shape of each protocol and the reason it is safe. Each lesson links to the
+      original papers and specifications, which are the authority.
+    </p>
+
+    <h2>Spotted a mistake?</h2>
+    <p>Corrections are welcome. Every claim here should trace back to a paper or a specification.</p>
+
+    <p><a href="/">Back to the family tree →</a></p>
+  </div>
+</Base>
+
+<style>
+  .about {
+    padding-top: 48px;
+    max-width: 760px;
+  }
+
+  h1 {
+    font-size: clamp(40px, 6vw, 52px);
+    margin: 12px 0 0;
+  }
+
+  h2 {
+    font-size: 26px;
+    margin: 36px 0 0;
+  }
+
+  p {
+    margin: 14px 0 0;
+  }
+
+  ul {
+    margin: 14px 0 0;
+    padding-left: 22px;
+  }
+
+  li + li {
+    margin-top: 8px;
+  }
+</style>

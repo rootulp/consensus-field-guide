@@ -1,0 +1,206 @@
+---
+import '../../styles/sim.css';
+import { L, LEADERS, M, N, VIEWS } from '../../lib/sims/minimmit';
+---
+
+<section class="sim" data-sim="minimmit" aria-labelledby="mm-sim-h">
+  <div class="sim-head">
+    <h2 id="mm-sim-h">Watch: one round of votes, two thresholds</h2>
+    <div class="sim-controls">
+      <button type="button" class="btn" data-act="play">Pause</button>
+      <button type="button" class="btn btn-quiet" data-act="step">Step</button>
+      <button type="button" class="btn btn-quiet" data-act="restart">Restart</button>
+    </div>
+  </div>
+
+  <div class="mm-top">
+    <div class="mono">n = {N} replicas · f = 1 · next view at <strong>{M}</strong> votes · final at <strong>{L}</strong> votes</div>
+    <div class="segmented" role="group" aria-label="Offline replicas">
+      <button type="button" class="btn btn-quiet" data-offline="0" aria-pressed="true">All online</button>
+      <button type="button" class="btn btn-quiet" data-offline="1" aria-pressed="false">R6 offline (f)</button>
+      <button type="button" class="btn btn-quiet" data-offline="2" aria-pressed="false">R5 + R6 offline</button>
+    </div>
+  </div>
+
+  <div class="sim-scroll">
+    <ol class="sim-views" style={`grid-template-columns: repeat(${VIEWS}, minmax(104px, 1fr)); min-width: 900px`}>
+      {
+        LEADERS.map((leader, i) => (
+          <li class="sim-view" data-view={i} data-status="pending">
+            <div class="sim-view-top">
+              <span>view {i + 1}</span>
+              <span>R{leader + 1}</span>
+            </div>
+            <div class="sim-block" data-block>—</div>
+            <div class="mm-meter" aria-hidden="true">
+              <div class="mm-fill" data-fill></div>
+              <div class="mm-mark" style={`left:${(M / N) * 100}%`}></div>
+              <div class="mm-mark" style={`left:${(L / N) * 100}%`}></div>
+            </div>
+            <div class="mm-votes mono" data-votes>0 / {N}</div>
+            <div class="sim-chip" data-chip>not started</div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+
+  <div class="mm-scale mono" aria-hidden="true">
+    Vote meter marks: left line = {M} votes (move on), right line = {L} votes (final)
+  </div>
+
+  <div class="sim-caption mm-log" aria-live="polite" data-caption>Press play to watch Minimmit run.</div>
+
+  <div class="sim-legend">
+    <span><i style="border: 2px solid var(--accent)"></i>proposed, collecting votes</span>
+    <span><i style="background: var(--accent)"></i>notarized: 2f+1 votes, next view starts</span>
+    <span><i style="background: var(--good)"></i>final: n−f votes</span>
+    <span><i style="background: #8a8f99"></i>nullified: timed out</span>
+  </div>
+</section>
+
+<script>
+  import {
+    initialState,
+    isOffline,
+    setOffline,
+    step,
+    LEADERS,
+    N,
+    type MinimmitState,
+    type MinimmitStatus,
+  } from '../../lib/sims/minimmit';
+
+  const CHIP: Record<MinimmitStatus, string> = {
+    pending: 'not started',
+    proposed: 'collecting votes',
+    waiting: 'leader silent…',
+    notarized: 'notarized',
+    final: 'final ✓',
+    nullified: 'nullified',
+  };
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-sim="minimmit"]')) {
+    let s: MinimmitState = initialState(0);
+    let playing = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const $ = <T extends HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+    const views = [...root.querySelectorAll<HTMLElement>('[data-view]')];
+    const offlineButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-offline]')];
+
+    const render = () => {
+      views.forEach((el, i) => {
+        const v = s.views[i];
+        if (el.dataset.status !== v.status) el.dataset.status = v.status;
+        el.classList.toggle('active', i === s.cur);
+        el.classList.toggle('leader-off', isOffline(s, LEADERS[i]));
+        el.querySelector('[data-block]')!.textContent =
+          v.status === 'pending' ? '—' : v.status === 'waiting' ? '?' : v.status === 'nullified' ? '⊥' : `B${i + 1}`;
+        el.querySelector<HTMLElement>('[data-fill]')!.style.width = `${(v.votes / N) * 100}%`;
+        el.querySelector('[data-votes]')!.textContent = `${v.votes} / ${N} votes`;
+        el.querySelector('[data-chip]')!.textContent =
+          v.status === 'notarized' && v.stuckNoted ? 'never final' : CHIP[v.status];
+      });
+      const log = $('[data-caption]');
+      log.replaceChildren(
+        ...s.events.map((e) => {
+          const p = document.createElement('p');
+          p.textContent = e;
+          return p;
+        }),
+      );
+      if (!s.events.length) log.textContent = 'Press play to watch Minimmit run.';
+      $('[data-act="play"]').textContent = playing ? 'Pause' : 'Play';
+      offlineButtons.forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.offline) === s.offlineCount)));
+    };
+
+    const advance = () => {
+      s = step(s);
+      render();
+    };
+
+    $('[data-act="play"]').addEventListener('click', () => {
+      playing = !playing;
+      render();
+    });
+    $('[data-act="step"]').addEventListener('click', () => {
+      playing = false;
+      advance();
+    });
+    $('[data-act="restart"]').addEventListener('click', () => {
+      s = initialState(s.offlineCount);
+      render();
+    });
+    offlineButtons.forEach((b) =>
+      b.addEventListener('click', () => {
+        s = setOffline(Number(b.dataset.offline));
+        render();
+      }),
+    );
+
+    setInterval(() => {
+      if (playing) advance();
+    }, 1600);
+    render();
+  }
+</script>
+
+<style>
+  .mm-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .mono {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .mono strong {
+    color: var(--ink);
+  }
+
+  .mm-meter {
+    position: relative;
+    height: 8px;
+    background: var(--rule);
+  }
+
+  .mm-fill {
+    height: 8px;
+    width: 0;
+    background: var(--accent);
+    transition: width 0.4s;
+  }
+
+  [data-status='final'] .mm-fill {
+    background: var(--good);
+  }
+
+  .mm-mark {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 2px;
+    margin-left: -1px;
+    background: var(--ink);
+  }
+
+  .mm-votes {
+    font-size: 11px;
+    text-align: center;
+  }
+
+  .mm-scale {
+    margin-top: 10px;
+    font-size: 12px;
+  }
+
+  .mm-log :global(p) {
+    margin: 0 0 6px;
+  }
+</style>

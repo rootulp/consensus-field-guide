@@ -1,0 +1,146 @@
+---
+import Lesson from '../../layouts/Lesson.astro';
+import Quiz from '../../components/Quiz.astro';
+import SimplexSim from '../../components/sims/SimplexSim.astro';
+
+const papers = [
+  {
+    title: 'Simplex Consensus: A Simple and Fast Consensus Protocol',
+    authors: 'Benjamin Y. Chan & Rafael Pass',
+    year: '2023',
+    href: 'https://eprint.iacr.org/2023/463',
+    note: 'the original paper',
+  },
+  {
+    title: 'commonware-consensus: simplex',
+    authors: 'Commonware',
+    year: 'ongoing',
+    href: 'https://docs.rs/commonware-consensus/latest/commonware_consensus/simplex/index.html',
+    note: 'a production implementation, with a precise spec of each view',
+  },
+  {
+    title: 'HotStuff: BFT Consensus in the Lens of Blockchain',
+    authors: 'Maofan Yin, Dahlia Malkhi, Michael K. Reiter, Guy Golan Gueta & Ittai Abraham',
+    year: '2018',
+    href: 'https://arxiv.org/abs/1803.05069',
+    note: 'the protocol Simplex is most often compared against',
+  },
+];
+---
+
+<Lesson
+  id="spx"
+  dek="A BFT protocol simple enough to prove on a whiteboard, which still matches the best known latency. Commonware’s consensus library is built on it."
+  before={['Tendermint', 'HotStuff']}
+  papers={papers}
+>
+  <SimplexSim slot="sim" />
+
+  <h2>The problem it solved</h2>
+  <p>
+    Classical BFT protocols have two modes. The <em>normal path</em> runs while the leader is honest. The
+    <em>view change</em> is a separate protocol for replacing a bad leader, and it has to carry enough state across the
+    switch to stay safe. PBFT's view change is famously intricate, and it's where many subtle bugs in BFT systems
+    live. Tendermint's locks and HotStuff's pacemaker solve the same problem, in different ways.
+  </p>
+  <p>
+    Simplex, by Benjamin Chan and Rafael Pass, removes the second mode. A bad leader is handled by the same few rules
+    as a good one.
+  </p>
+
+  <h2>How a view works</h2>
+  <p>Time is split into numbered <strong>views</strong>, each with one leader. In each view:</p>
+  <ol>
+    <li>The leader proposes a block that extends the chain it has seen certified.</li>
+    <li>
+      Validators who receive a valid proposal in time vote to <strong>notarize</strong> it. If their timer expires
+      first, they vote to <strong>nullify</strong> the view instead.
+    </li>
+    <li>
+      Votes from 2/3 of validators form a certificate: a <em>notarization</em> for the block, or a
+      <em>nullification</em> for the view. Either one moves everyone to the next view.
+    </li>
+    <li>
+      A validator that saw the block notarized and did not vote to nullify also sends a <strong>finalize</strong> vote.
+      2/3 finalize votes make the block final, along with everything it builds on.
+    </li>
+  </ol>
+  <p>
+    That's the whole protocol. There is no separate recovery mode. A view with a dead leader simply ends in a
+    nullification, and the next leader builds on the last notarized block.
+  </p>
+
+  <h2>Why it's safe</h2>
+  <p>
+    An honest validator never sends both a finalize vote and a nullify vote for the same view. Suppose a block is
+    finalized in view <em>v</em>: 2/3 sent finalize votes. A nullification of <em>v</em> would need another 2/3 sending
+    nullify votes. Those two groups overlap in at least one honest validator, who would have had to send both. So once
+    a block is final, its view can never be nullified, and every later leader has to build on it.
+  </p>
+  <p>The proof in the paper is about a page long, which is a big part of why Simplex caught on.</p>
+
+  <h2>Why it's fast</h2>
+  <p>
+    Notice that in the animation, the next view starts as soon as a block is <em>notarized</em>, without waiting for it
+    to be final. Finalization catches up one step behind. This gives Simplex two good numbers:
+  </p>
+  <ul>
+    <li>
+      <strong>Block time of two network hops:</strong> the proposal goes out, and the votes come back.
+    </li>
+    <li>
+      <strong>Finality in three hops:</strong> one more round of finalize votes. That matches the best possible latency
+      for a partially synchronous protocol that tolerates a third of validators being faulty.
+    </li>
+  </ul>
+
+  <h2>In production: Commonware</h2>
+  <p>
+    Commonware's <code>simplex</code> engine follows the paper with practical changes. It uses separate
+    <code>notarize</code> and <code>nullify</code> messages rather than a vote for a "dummy block". It adds a leader
+    timeout that skips leaders who have been offline recently. It can aggregate votes with BLS threshold signatures,
+    so a certificate stays the same size however many validators sign. It also lets the application
+    <em>certify</em> a notarized block before finalizing, for example after checking that erasure-coded pieces of the
+    block arrived.
+  </p>
+  <p>
+    That production experience led directly to the next lesson: Minimmit asks whether the finalize round can be removed
+    entirely.
+  </p>
+
+  <Fragment slot="side">
+    <div class="box">
+      <h3>How it compares</h3>
+      <table>
+        <thead>
+          <tr><th></th><th>Next block after</th><th>Bad leader</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Tendermint</td><td>commit (2 vote rounds)</td><td>new round; locks carry safety</td></tr>
+          <tr><td>HotStuff</td><td>1 phase, pipelined</td><td>pacemaker</td></tr>
+          <tr><td>Simplex</td><td>notarization (1 vote round)</td><td>nullify, same path</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <Quiz
+      question="In view 4 the leader never sends a block. What do validators do?"
+      options={[
+        { text: 'Wait until the leader comes back' },
+        { text: 'Time out, vote to nullify the view, and move on', correct: true },
+        { text: 'Run a separate view-change protocol to pick a new leader' },
+      ]}
+      right="Right. A nullification is just another certificate, so a bad leader costs one timeout and nothing else."
+      wrong="Not quite. Simplex has no separate recovery mode: validators nullify the view and the next leader takes over."
+    />
+    <Quiz
+      question="Why can view 5 start before view 4’s block is final?"
+      options={[
+        { text: 'A notarization proves 2/3 accepted the block, which is enough to build on; finality follows a step later', correct: true },
+        { text: 'Because Simplex never finalizes blocks' },
+        { text: 'Because leaders are trusted to propose correct blocks' },
+      ]}
+      right="Right. Building on notarized blocks keeps blocks coming every two hops, while finalize votes trail one step behind."
+      wrong="Not quite. Simplex does finalize, and it never trusts the leader. A notarization certificate is what makes it safe to build on."
+    />
+  </Fragment>
+</Lesson>

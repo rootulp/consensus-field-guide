@@ -21,7 +21,7 @@ import { LEADERS, VIEWS } from '../../lib/sims/simplex';
           <li class="sim-view" data-view={i} data-status="pending">
             <div class="sim-view-top">
               <span>view {i + 1}</span>
-              <span>leader {leader}</span>
+              <span>{leader}</span>
             </div>
             <div class="sim-block" data-block>—</div>
             <div class="sim-chip" data-chip>not started</div>
@@ -34,7 +34,7 @@ import { LEADERS, VIEWS } from '../../lib/sims/simplex';
   <p class="sim-caption" aria-live="polite" data-caption>Press play to watch Simplex run.</p>
 
   <div class="sim-legend">
-    <span><i style="border: 2px solid var(--accent)"></i>proposed</span>
+    <span><i style="border: 2px solid var(--accent)"></i>proposed by the view’s leader (P1–P4)</span>
     <span><i style="background: var(--accent)"></i>notarized: 2/3 voted, next view starts</span>
     <span><i style="background: var(--good)"></i>finalized: 2/3 sent finalize</span>
     <span><i style="background: #8a8f99"></i>nullified: timed out</span>
@@ -69,7 +69,7 @@ import { LEADERS, VIEWS } from '../../lib/sims/simplex';
         el.querySelector('[data-block]')!.textContent =
           status === 'pending' ? '—' : status === 'waiting' ? '?' : status === 'nullified' ? '⊥' : `B${i + 1}`;
         el.querySelector('[data-chip]')!.textContent = CHIP[status];
-        el.querySelector('.sim-view-top span:last-child')!.textContent = `leader ${LEADERS[i]}`;
+        el.querySelector(".sim-view-top span:last-child")!.textContent = LEADERS[i];
       });
       caption.textContent = s.last || 'Press play to watch Simplex run.';
       playBtn.textContent = playing ? 'Pause' : 'Play';

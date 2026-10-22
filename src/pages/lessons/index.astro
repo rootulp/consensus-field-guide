@@ -1,0 +1,150 @@
+---
+import Base from '../../layouts/Base.astro';
+import { displayYear, families, lessonHref, lessons } from '../../data/protocols';
+---
+
+<Base
+  title="Lessons · The Consensus Field Guide"
+  description="Animated lessons on Tendermint, Simplex and Minimmit: the blockchain BFT line from 2014 to the frontier."
+  nav="lessons"
+>
+  <div class="wrap-narrow">
+    <header class="head">
+      <div class="eyebrow">The blockchain BFT line</div>
+      <h1>Lessons</h1>
+      <p>
+        Three protocols, read in order, take you from the first BFT blockchain engine to the frontier. Each lesson has a
+        live animation, the idea it added, its trade-offs, and a couple of questions to check yourself.
+      </p>
+    </header>
+
+    <ol class="lessons">
+      {
+        lessons.map((p, i) => (
+          <li>
+            <span class="n">{String(i + 1).padStart(2, '0')}</span>
+            <div class="main">
+              <div class="meta">
+                <span class="chip" style={`background:${families[p.family].color}`}>
+                  {families[p.family].label}
+                </span>
+                <span class="yr">{displayYear(p)}</span>
+                <span class="status" data-status={p.lesson} />
+              </div>
+              <h2>
+                <a href={lessonHref(p)}>{p.name}</a>
+              </h2>
+              <p>{p.gift}</p>
+              <span class="mins">{p.minutes} min · live animation · quiz</span>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+
+    <p class="more">
+      More lessons are planned for the rest of the <a href="/">family tree</a>, starting with PBFT, HotStuff and
+      Multimmit.
+    </p>
+  </div>
+</Base>
+
+<script>
+  import { readLessons } from '../../lib/progress';
+
+  const read = readLessons();
+  for (const el of document.querySelectorAll<HTMLElement>('[data-status]')) {
+    if (read.has(el.dataset.status!)) el.textContent = '✓ read';
+  }
+</script>
+
+<style>
+  .head {
+    padding: 48px 0 16px;
+  }
+
+  h1 {
+    font-size: clamp(44px, 7vw, 56px);
+    margin: 12px 0 0;
+  }
+
+  .head p {
+    font-size: 19px;
+    color: var(--ink-2);
+    margin: 16px 0 0;
+    max-width: 720px;
+  }
+
+  .lessons {
+    list-style: none;
+    margin: 24px 0 0;
+    padding: 0;
+    border-top: 2px solid var(--ink);
+  }
+
+  .lessons li {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 16px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .n {
+    font-family: var(--serif);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--rule-2);
+    line-height: 1;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .yr,
+  .status {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .status {
+    color: var(--good-ink);
+  }
+
+  h2 {
+    margin: 8px 0 0;
+    font-size: 30px;
+  }
+
+  h2 a {
+    color: var(--ink);
+  }
+
+  .main p {
+    margin: 8px 0 0;
+    color: var(--ink-2);
+  }
+
+  .mins {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .more {
+    margin-top: 32px;
+    color: var(--ink-2);
+  }
+
+  @media (max-width: 720px) {
+    .lessons li {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

@@ -1,0 +1,152 @@
+/* Shared chrome for the lesson simulations. */
+
+.sim {
+  border: 1px solid var(--rule);
+  padding: 28px;
+}
+
+.sim-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.sim-head h2 {
+  font-size: 26px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.sim-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sim-caption {
+  font-size: 17px;
+  line-height: 1.55;
+  margin: 20px 0 0;
+  min-height: 80px;
+  color: var(--ink);
+}
+
+.sim-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.sim-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sim-legend i {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+}
+
+.sim-scroll {
+  overflow-x: auto;
+  margin-top: 24px;
+}
+
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+}
+
+.segmented .btn + .btn {
+  margin-left: -1px;
+}
+
+.sim-views {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.sim-view {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.sim-view.active {
+  border-color: var(--ink);
+  background: #fafafb;
+}
+
+.sim-view-top {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sim-block {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.sim-chip {
+  font-size: 12px;
+  text-align: center;
+  padding: 4px 6px;
+}
+
+/* Status looks shared by the Simplex and Minimmit views. */
+[data-status='pending'] .sim-block { border: 1px dashed var(--rule-2); color: #8a8f99; background: var(--paper); }
+[data-status='pending'] .sim-chip { background: #f2f3f5; color: #4a4f5a; }
+[data-status='proposed'] .sim-block { border: 2px solid var(--accent); color: var(--accent); background: var(--paper); }
+[data-status='proposed'] .sim-chip { background: #eef1fc; color: var(--accent-ink); }
+[data-status='waiting'] .sim-block { border: 2px dashed var(--rust); color: var(--rust); background: var(--paper); }
+[data-status='waiting'] .sim-chip { background: #fbf0e6; color: #8a3e07; }
+[data-status='notarized'] .sim-block { border: 2px solid var(--accent); color: #fff; background: var(--accent); }
+[data-status='notarized'] .sim-chip { background: var(--accent); color: #fff; }
+[data-status='finalized'] .sim-block,
+[data-status='final'] .sim-block { border: 2px solid var(--good); color: #fff; background: var(--good); }
+[data-status='finalized'] .sim-chip,
+[data-status='final'] .sim-chip { background: var(--good); color: #fff; }
+[data-status='nullified'] .sim-block { border: 2px solid #8a8f99; color: #fff; background: #8a8f99; }
+[data-status='nullified'] .sim-chip { background: var(--muted); color: #fff; }
+
+.sim-view:not([data-status='pending']) .sim-block {
+  animation: sim-rise 0.35s ease-out both;
+}
+
+@keyframes sim-rise {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (max-width: 720px) {
+  .sim {
+    padding: 16px;
+  }
+}

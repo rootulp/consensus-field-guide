@@ -153,3 +153,28 @@ test('scrolling away pauses playback; narrow viewports contain the diagrams', as
     }
   }
 });
+
+test('glossary is reachable from lessons and supports direct term links', async ({ page }) => {
+  await page.goto('/lessons/simplex/');
+  await page.getByRole('link', { name: 'Keep the glossary handy →' }).click();
+  await expect(page).toHaveURL(/\/glossary\/$/);
+  await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Glossary' })).toHaveAttribute('aria-current', 'page');
+  const index = page.getByRole('navigation', { name: 'Glossary terms' });
+  await index.getByRole('link', { name: 'Certificate (QC)', exact: true }).click();
+  await expect(page).toHaveURL(/#certificate$/);
+  await expect(page.locator('#certificate')).toBeInViewport();
+  await expect(page.locator('#certificate')).toContainText('Verifiable evidence');
+  await page.locator('#certificate').getByRole('link', { name: 'See it in HotStuff →' }).click();
+  await expect(page).toHaveURL(/\/lessons\/hotstuff\/$/);
+  await page.goto('/glossary/#notarize');
+  await expect(page.locator('#notarize')).toBeInViewport();
+  await expect(page.locator('#notarize')).toContainText('Notarized does not universally mean final');
+  await page.goto('/glossary/#view');
+  await expect(page.locator('#view')).toBeInViewport();
+  await expect(page.locator('#view')).toContainText('numbered leadership period');
+  // The index and further-reading links must point to real sections and routes.
+  const brokenAnchors = await index.locator('a').evaluateAll(links => links.map(link => link.getAttribute('href')!).filter(hash => !document.getElementById(hash.slice(1))));
+  expect(brokenAnchors).toEqual([]);
+  await page.setViewportSize({ width: 320, height: 740 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});

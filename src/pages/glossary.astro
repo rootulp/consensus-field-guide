@@ -1,0 +1,58 @@
+---
+import Base from '../layouts/Base.astro';
+import { glossary } from '../data/glossary';
+---
+
+<Base
+  title="Glossary · The Consensus Field Guide"
+  description="Plain-language definitions of consensus terms, including certificate, notarize, view, quorum, and finality, with examples from the lessons."
+  nav="glossary"
+>
+  <div class="wrap-narrow glossary">
+    <header id="terms-top">
+      <div class="eyebrow">A companion to the lessons</div>
+      <h1>Consensus, in plain language</h1>
+      <p class="intro">Look up a term as you read. Each definition includes an example and a lesson where you can see the idea in action.</p>
+      <p class="context">Protocols sometimes use the same word for different rules. These definitions explain how the guide uses each term; the linked lessons and their source papers give the precise conditions.</p>
+    </header>
+
+    <nav class="term-index" aria-label="Glossary terms">
+      {glossary.map(entry => <a href={`#${entry.id}`}>{entry.term}</a>)}
+    </nav>
+
+    <div class="definitions prose">
+      {glossary.map(entry => (
+        <section id={entry.id} aria-labelledby={`${entry.id}-heading`}>
+          <h2 id={`${entry.id}-heading`}><a href={`#${entry.id}`}>{entry.term}</a></h2>
+          <p>{entry.definition}</p>
+          <p class="example"><strong>Example:</strong> {entry.example}</p>
+          {entry.note && <p>{entry.note}</p>}
+          <div class="term-links">
+            <a href={`/lessons/${entry.lesson}/`}>See it in {entry.lessonName} →</a>
+            <a href="#terms-top">Back to terms ↑</a>
+          </div>
+        </section>
+      ))}
+    </div>
+  </div>
+</Base>
+
+<style>
+  .glossary { max-width: 940px; padding-top: 48px; }
+  h1 { font-size: clamp(38px, 6vw, 52px); margin: 12px 0 0; }
+  .intro { font-size: 20px; color: var(--ink-2); margin: 20px 0 0; }
+  .context { color: var(--muted); margin: 16px 0 0; }
+  .term-index { display: flex; flex-wrap: wrap; gap: 8px; padding-block: 28px; border-bottom: 2px solid var(--ink); }
+  .term-index a { display: block; padding: 8px 12px; border: 1px solid var(--rule-2); font-size: 14px; text-decoration: none; }
+  .term-index a:hover { background: var(--wash-blue); }
+  section { padding: 28px 16px; border-bottom: 1px solid var(--rule); scroll-margin-top: 24px; }
+  section:target { background: var(--wash-blue); box-shadow: inset 4px 0 var(--accent); }
+  h2 { font-size: 28px; margin: 0; }
+  h2 a { color: var(--ink); text-decoration: none; }
+  h2 a:hover { text-decoration: underline; }
+  section p { margin: 14px 0 0; }
+  .example { padding-left: 16px; border-left: 3px solid var(--rule-2); }
+  .term-links { display: flex; flex-wrap: wrap; gap: 12px 28px; margin-top: 18px; font-size: 14px; }
+  .term-links a { padding-block: 8px; }
+  @media (max-width: 720px) { section { padding-inline: 12px; } }
+</style>

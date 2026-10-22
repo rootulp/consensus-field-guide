@@ -20,3 +20,7 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
+      - run: npm run build
+        env:
+          BASE_PATH: /consensus-field-guide/
+      - run: npm run test:pages

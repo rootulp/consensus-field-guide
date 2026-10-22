@@ -1,18 +1,20 @@
 ---
+import { sitePath } from '../lib/urls';
 import '../styles/global.css';
 
 interface Props {
   title: string;
   description: string;
   /** Which top-level nav item is current. */
-  nav?: 'tree' | 'lessons' | 'about';
+  nav?: 'tree' | 'lessons' | 'glossary' | 'about';
 }
 
 const { title, description, nav } = Astro.props;
 const links = [
-  { id: 'tree', href: '/', label: 'Family tree' },
-  { id: 'lessons', href: '/lessons/', label: 'Lessons' },
-  { id: 'about', href: '/about/', label: 'About' },
+  { id: 'tree', href: sitePath('/'), label: 'Family tree' },
+  { id: 'lessons', href: sitePath('/lessons/'), label: 'Lessons' },
+  { id: 'glossary', href: sitePath('/glossary/'), label: 'Glossary' },
+  { id: 'about', href: sitePath('/about/'), label: 'About' },
 ];
 ---
 
@@ -23,7 +25,7 @@ const links = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href={sitePath('/favicon.svg')} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -34,7 +36,7 @@ const links = [
   <body>
     <a class="skip visually-hidden" href="#main">Skip to content</a>
     <header class="site-header">
-      <a class="brand" href="/">The Consensus Field Guide</a>
+      <a class="brand" href={sitePath('/')}>The Consensus Field Guide</a>
       <nav aria-label="Main">
         {
           links.map((l) => (

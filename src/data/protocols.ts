@@ -1,3 +1,5 @@
+import { sitePath } from '../lib/urls';
+
 // The family tree: every protocol, which family it belongs to, and who built on whom.
 // Positions (x, y) place each node on the 1000 x 980 tree canvas; y roughly tracks time.
 
@@ -143,6 +145,6 @@ export const childrenOf = (id: string): Protocol[] => edges.filter(([p]) => p ==
 
 export const lessons: Protocol[] = protocols.filter((p) => p.lesson);
 
-export const lessonHref = (p: Protocol): string | undefined => (p.lesson ? `/lessons/${p.lesson}/` : undefined);
+export const lessonHref = (p: Protocol): string | undefined => (p.lesson ? sitePath(`/lessons/${p.lesson}/`) : undefined);
 
 export const displayYear = (p: Protocol): string => p.yearLabel ?? String(p.year);

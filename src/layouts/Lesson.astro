@@ -1,4 +1,5 @@
 ---
+import { sitePath } from '../lib/urls';
 import Base from './Base.astro';
 import { byId, childrenOf, displayYear, families, lessonHref, lessons, parentsOf } from '../data/protocols';
 
@@ -28,13 +29,13 @@ const children = childrenOf(id);
 const idx = lessons.findIndex((l) => l.id === id);
 const prev = lessons[idx - 1];
 const next = lessons[idx + 1];
-const nodeHref = (q: typeof p) => lessonHref(q) ?? `/?p=${q.id}`;
+const nodeHref = (q: typeof p) => lessonHref(q) ?? sitePath(`/?p=${q.id}`);
 ---
 
 <Base title={`${p.name} · The Consensus Field Guide`} description={dek} nav="lessons">
   <div class="wrap-narrow">
     <nav aria-label="Breadcrumb" class="crumbs">
-      <a href={`/?p=${p.id}`}>Family tree</a>
+      <a href={sitePath(`/?p=${p.id}`)}>Family tree</a>
       <span aria-hidden="true">/</span>
       <span>{fam.label}</span>
       <span aria-hidden="true">/</span>
@@ -48,6 +49,7 @@ const nodeHref = (q: typeof p) => lessonHref(q) ?? `/?p=${q.id}`;
       </div>
       <h1>{p.name}</h1>
       <p class="dek">{dek}</p>
+      <p class="glossary-help">New to the terminology? <a href={sitePath('/glossary/')}>Keep the glossary handy →</a></p>
       <div class="row tags">
         <span class="tag">{p.minutes} min</span>
         {before.length > 0 && <span class="tag">Helps to know: {before.join(', ')}</span>}
@@ -57,7 +59,7 @@ const nodeHref = (q: typeof p) => lessonHref(q) ?? `/?p=${q.id}`;
     <section class="family" aria-labelledby="family-h">
       <div class="family-head">
         <h2 id="family-h">Where {p.name} sits in the family</h2>
-        <a href={`/?p=${p.id}`}>See the full family tree →</a>
+        <a href={sitePath(`/?p=${p.id}`)}>See the full family tree →</a>
       </div>
       <div class="family-row">
         <div class="family-col">
@@ -130,14 +132,14 @@ const nodeHref = (q: typeof p) => lessonHref(q) ?? `/?p=${q.id}`;
     </div>
 
     <nav aria-label="Lesson navigation" class="pager">
-      {prev ? <a href={lessonHref(prev)}>← {prev.name}, {prev.year}</a> : <a href="/">← Family tree</a>}
+      {prev ? <a href={lessonHref(prev)}>← {prev.name}, {prev.year}</a> : <a href={sitePath('/')}>← Family tree</a>}
       {
         next ? (
           <a class="btn btn-primary" href={lessonHref(next)}>
             Next: {next.name}, {next.year} →
           </a>
         ) : (
-          <a class="btn btn-primary" href="/">
+          <a class="btn btn-primary" href={sitePath('/')}>
             Back to the family tree →
           </a>
         )
